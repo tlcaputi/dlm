@@ -1,0 +1,348 @@
+#' Reverse Cumulative Sum
+#'
+#' Gives the reverse cumulative sum of a vector.
+#' @param x A vector
+#' @return A vector 
+#' @export
+#' 
+revcumsum <- function(x){
+  x <- rev(cumsum(rev(x)))
+}
+
+
+#' Standard Error Cumulative Sum
+#'
+#' Gives the cumulative sum of a variance-covariance matrix.
+#' @param vcov A variance-covariance matrix
+#' @return A vector of SEs
+#' @export
+#' 
+secumsum <- function(vcov){
+  L <- dim(vcov)[1]
+  # result vector with standard errors
+  se <- c()
+  # loop over elements
+  for (i in c(1:L)){
+    # Variance of cumulative sum from 1 to i
+    # V[ax] = a*V[x]*a', a=[1, ..., 1]
+    # create vector for summation
+    a <- matrix(rep(1,i), nrow = 1)
+    V <- a %*% vcov[1:i,1:i] %*% t(a)
+    se[i] <- sqrt(V)
+  }
+  return(se)
+}
+
+
+
+#' Reverse Standard Error Cumulative Sum
+#'
+#' Gives the cumulative sum of a variance-covariance matrix.
+#' @param vcov A variance-covariance matrix
+#' @return A vector of SEs
+#' @export
+#' 
+serevcumsum <- function(vcov){
+  L <- dim(vcov)[1]
+  # result vector with standard errors
+  se <- c()
+  # loop over elements
+  for (i in c(L:1)){
+    # Variance of cumulative sum from i to L
+    # V[ax] = a*V[x]*a', a=[1, ..., 1]
+    a <- matrix(rep(1,L-i+1), nrow = 1)
+    V <- a %*% vcov[i:L,i:L] %*% t(a)
+    se[i] <- sqrt(V)
+  }
+  return(se)
+}
+
+
+
+#' Generate Data
+#'
+#' Produces a dataset perfect for a standard TWFE model
+#' @param seed Seed for the random data
+#' @param n_groups Number of groups
+#' @param n_times Number of time periods
+#' @param treat_prob Probability of treatment
+#' @return A dataset 
+#' @export
+#' 
+
+generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 0.4){
+
+    ## This generates a very simple dataset for a binary, standard TWFE model.
+    ## There are 26^2 groups and 20 time periods. 40% of units are treated at a random time between 7:9.
+    ## 60% are never treated. 0% are always treated.
+    
+    # We set a different seed for this function so that we can generate different data
+    set.seed(seed)
+
+    # Create a panel of n_times time periods and n_groups groups
+    times = 1:n_times
+    groups = glue("group{1:n_groups}")
+    panel = expand.grid(group = groups, time = times)
+
+    # Give treat_prob of units a random treatment time between 7:9
+    treatments = data.frame(group = groups) %>% 
+        sample_frac(treat_prob) %>% 
+        mutate(
+            treatment_time = sample(7:9, size = n(), replace = TRUE)
+        )
+    df = merge(panel, treatments, by=c("group"), all.x = T)
+
+    # Define treatment, years_to_treat, post, and outcome
+    df = df %>% mutate(
+        # whether the unit was ever treated (at any point)
+        treat = case_when(
+            is.na(treatment_time) ~ 0,
+            !is.na(treatment_time) ~ 1
+        ),
+        # how many years before/after treatment (-1000 for untreated units)
+        years_to_treatment = case_when(
+            treat == 0 ~ -1000,
+            treat == 1 ~ time - treatment_time
+        ),
+        # before or after treatment
+        post = case_when(
+            treat == 0 ~ 0,
+            treat == 1 ~ as.numeric(time >= treatment_time)
+        ),
+        # random outcome with effect size of 4 after treatment
+        outcome = rnorm(n()) + I(years_to_treatment >= 0) * 4
+    )
+
+    # Make it pretty
+    df = df %>% arrange(group, time)
+
+    # The result will have columns: group, time, treat, years_to_treatment, post, outcome
+    # The effect of the event should be 4.
+    return(df)
+
+}
+
+
+
+#' Distributed Lags Model
+#'
+#' This is the distributed lags model / continuous event study. 
+#' @param data A data frame containing the unit, time, outcome, covariates, and any additional fixed effects
+#' @param exposure_data A data frame containing the unit, time, and exposure variables
+#' @param from_rt The starting lag period.
+#' @param to_rt The ending lag period.
+#' @param outcome The outcome variable.
+#' @param exposure The exposure variable.
+#' @param unit The unit identifier.
+#' @param time The time variable.
+#' @param covariates Vector of covariates for the model.
+#' @param addl_fes Vector of additional fixed effects for the model.
+#' @param ref_period Reference period (default -1)
+#' @param weights Weights to be included in the regression
+#' @return A list containing model results, coefficients, and plots.
+#' @export
+#' 
+distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL){
+  
+  # Capture the minimum and maximum time
+  MINTIME = min(exposure_data[[time]])
+  MAXTIME = max(exposure_data[[time]])
+  
+  # This tells us the data years that are included
+  data_years_included = (MINTIME + abs(to_rt)):(MAXTIME - abs(from_rt) + 1)
+  log_info("Data years that should be included")
+  print(data_years_included)
+  data_years_included = intersect(data_years_included, unique(data[[time]]))
+  log_info("Data years that actually are included")
+  print(data_years_included)
+  
+  # Create lag and lead variables in the distance data
+  ## TODO: we only really need to create these once, not every time. Not sure how much time that saves.
+  log_info("Creating leads and lags")
+  leads = c()
+  for(i in (abs(from_rt) - 1):1){
+    exposure_data = exposure_data %>% 
+      group_by(!!sym(unit)) %>% 
+      mutate(
+        "{exposure}_lead{i}" := dplyr::lead(!!sym(exposure), i)
+      )
+    leads = c(leads, glue("{exposure}_lead{i}"))
+  }
+  leads_str = paste0(leads, collapse = " + ")
+  
+  lags = c()
+  for(i in 1:to_rt){
+    exposure_data = exposure_data %>% 
+      group_by(!!sym(unit)) %>% 
+      mutate(
+        "{exposure}_lag{i}" := dplyr::lag(!!sym(exposure), i)
+      )
+    lags = c(lags, glue("{exposure}_lag{i}"))
+  }
+  lags_str = paste0(lags, collapse = " + ")
+  log_info("Done creating leads and lags")
+  
+  
+  # Merge together the data and distance data
+  tmp = merge(data, exposure_data, by=c(unit, time), all.x = T)
+  
+  # Define unit and time
+  tmp = tmp %>% mutate(unit := !!sym(unit), time := !!sym(time))
+  
+  # Generate the formula
+  if(!is.null(covariates)){
+    covariate_str = paste0(covariates, collapse = ' + ')
+    fmla_str = glue("{outcome} ~ {leads_str} + {exposure} + {lags_str} + {covariate_str} | unit + time")
+  } else {
+    fmla_str = glue("{outcome} ~ {leads_str} + {exposure} + {lags_str} | unit + time")
+  }
+  if(!is.null(addl_fes)){
+    addl_fe_str = paste0(addl_fes, collapse = ' + ')
+    fmla_str = glue("{fmla_str} + {addl_fe_str}")
+  }
+  
+  log_info("Formula:")
+  print(fmla_str)
+  
+  # Estimate model with arguments
+  arguments = c("data = tmp", "cluster = ~unit", "fixef.rm = 'none'")
+  if(!is.null(weights)){
+    arguments = c(arguments, glue("weights = ~{weights}"))
+  }
+  cmd = glue("fixest::feols({fmla_str}, {paste0(arguments, collapse = ', ')})")
+  model = eval(parse(text=cmd))
+  
+  
+  log_info("Coefficients:")
+  num_vars = abs(from_rt)+to_rt
+  print(model$coefficients[1:num_vars])
+  
+  # Extract coefficients and regressions from the model
+  gamma = model$coefficients[1:num_vars]
+  vcov = vcov(model, cluster= ~unit)[1:num_vars, 1:num_vars]
+  
+  # Sum them up to the reference period
+  time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
+  num_before_periods = length(time_to_event[time_to_event < ref_period])
+  before_periods = 1:num_before_periods
+  after_periods = (num_before_periods + 1):num_vars
+  
+  coefs = c(
+    -revcumsum(gamma[before_periods]),
+    cumsum(gamma[after_periods])
+  )
+  ses = c(
+    serevcumsum(vcov[before_periods, before_periods]),
+    secumsum(vcov[after_periods, after_periods])
+  )
+  betas = data.frame(
+    time_to_event = time_to_event,
+    coef = coefs,
+    se = ses
+  )
+  
+  # This just creates a plot (adding in reference period)
+  # and is not really necessary for the results
+  plotdf = rbind.data.frame(betas, data.frame(time_to_event = ref_period, coef = 0, se = 0))
+  plotdf = plotdf %>% mutate(
+    time_to_event_str = case_when(
+      time_to_event == from_rt ~ glue("{from_rt}+"),
+      time_to_event == to_rt ~ glue("{to_rt}+"),
+      T ~ as.character(time_to_event)
+    )
+  )
+  plotdf = plotdf %>% arrange(time_to_event)
+  p = ggplot(plotdf, aes(x = time_to_event, y = coef))
+  p = p + geom_line(color = "darkblue")
+  p = p + geom_point(color = "darkblue")
+  p = p + geom_errorbar(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), width = 0.2, color = "darkblue")
+  p = p + geom_hline(yintercept = 0, linetype = "dashed")
+  p = p + geom_vline(xintercept = -0.5, linetype = "dashed")
+  p = p + geom_vline(xintercept = ref_period+0.5, linetype = "dashed")
+  p = p + labs(x = "Time to Treatment", y = "Coefficient")
+  
+  return(list("betas" = betas, "plot" = p, "model" = model, "vcov" = vcov, "data_years_included" = data_years_included, "fmla_str" = fmla_str, "from_rt" = from_rt, "to_rt" = to_rt, "cmd" = cmd))
+  
+}
+
+
+
+#' Standard Two-Way Fixed Effects Model for Comparison
+#'
+#' This produces the standard two-way fixed effects model for comparison to the distributed lags model
+#' @param data A data frame containing the main dataset.
+#' @param from_rt The starting lag period.
+#' @param to_rt The ending lag period.
+#' @param outcome The outcome variable.
+#' @param time The time variable.
+#' @param unit The unit identifier.
+#' @param time_to_treatment The variable representing time to treatment.
+#' @param treat The treatment indicator variable.
+#' @param covariates Optional covariates for the model.
+#' @param ref_period The reference period for summing coefficients (default is -1).
+#' @return A list containing model results, coefficients, and plots.
+#' @export
+#' 
+standard_twfe_for_comparison = function(data, from_rt, to_rt, outcome, time, unit, time_to_treatment, treat, covariates = NULL, ref_period = -1, weights = NULL){
+
+    # Capture the minimum and maximum time
+    MINTIME = min(data[[time]])
+    MAXTIME = max(data[[time]])
+
+    # It's easier to just assign names to the variables we want to use.
+    # Although this means that the original data can't use these variable names...
+    tmp = data %>% mutate(
+        time_to_treatment := !!sym(time_to_treatment),
+        treat := !!sym(treat),
+        unit := !!sym(unit),
+        time := !!sym(time),
+        outcome := !!sym(outcome)
+    ) %>% filter(time >= MINTIME + abs(to_rt), time <= MAXTIME - abs(from_rt) + 1)
+
+    # This is the standard TWFE model with binning at from_rt and to_rt
+    if(!is.null(covariates)){
+        fmla = glue(
+            "
+               {outcome}
+                ~
+                i(time_to_treatment, treat, ref=c({ref_period}, -1000), bin=.('{from_rt}+' = ~x<={from_rt}, '{to_rt}+' = ~x>={to_rt}))
+                + .[covariates]
+                |
+                unit
+                + time
+            "
+        )
+    } else {
+        fmla = glue(
+            "
+                {outcome}
+                ~
+                i(time_to_treatment, treat, ref=c({ref_period}, -1000), bin=.('{from_rt}+' = ~x<={from_rt}, '{to_rt}+' = ~x>={to_rt}))
+                |
+                unit
+                + time
+            "
+        )
+    }
+
+    arguments = c(
+        "data = tmp",
+        "cluster = ~unit"
+    )
+    if(!is.null(weights)){
+        arguments = c(arguments, glue("weights = ~{weights}"))
+    }
+    cmd = glue("fixest::feols({fmla}, {paste0(arguments, collapse = ', ')})")
+
+    # Actually estimates the model
+    fixest_model = eval(parse(text=cmd))
+
+    # We plot it and export the results
+    fixest_plot = ggiplot(fixest_model)
+    fixest_betas = as.data.frame(fixest_model$coeftable)
+    names(fixest_betas) = c("coef", "se", "tval", "pval")
+
+    return(list("betas" = fixest_betas, "plot" = fixest_plot, "model" = fixest_model, "cmd" = cmd))
+}
+
+
