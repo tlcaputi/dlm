@@ -1,4 +1,4 @@
-Package: DistributedLagModels
+Package: dlm
 Type: Package
 Title: Distributed Lags Models
 Version: 0.0.1
