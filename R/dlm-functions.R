@@ -142,7 +142,7 @@ generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 
 #' @return A list containing model results, coefficients, and plots.
 #' @export
 #' 
-distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL){
+distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2){
   
   # Capture the minimum and maximum time
   MINTIME = min(exposure_data[[time]])
@@ -263,10 +263,31 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   p = p + geom_point(color = "darkblue")
   p = p + geom_errorbar(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), width = 0.2, color = "darkblue")
   p = p + geom_hline(yintercept = 0, linetype = "dashed")
-  p = p + geom_vline(xintercept = -0.5, linetype = "dashed")
   p = p + geom_vline(xintercept = ref_period+0.5, linetype = "dashed")
   p = p + labs(x = "Time to Treatment", y = "Coefficient")
-  
+  p = p + theme_bw()
+
+  if(dd){
+    out = twfe_companion(
+      data = data, 
+      exposure_data = exposure_data, 
+      from_rt = from_rt, 
+      to_rt = to_rt, 
+      outcome = outcome, 
+      exposure = exposure, 
+      unit = unit, 
+      time = time, 
+      covariates = covariates, 
+      addl_fes = addl_fes, 
+      ref_period = ref_period, 
+      weights = weights, 
+      dd = dd, 
+      n = n
+    )
+    # out = do.call(twfe_companion, list(...))
+    p = p + labs(caption = out)
+  }
+
   return(list("betas" = betas, "plot" = p, "model" = model, "vcov" = vcov, "data_years_included" = data_years_included, "fmla_str" = fmla_str, "from_rt" = from_rt, "to_rt" = to_rt, "cmd" = cmd))
   
 }
@@ -352,3 +373,77 @@ standard_twfe_for_comparison = function(data, from_rt, to_rt, outcome, time, uni
 }
 
 
+
+
+
+#' TWFE Companion
+#'
+#' This is the companion TWFE, which adds the DD estimate to the bottom of the figure
+#' @param data A data frame containing the unit, time, outcome, covariates, and any additional fixed effects
+#' @param exposure_data A data frame containing the unit, time, and exposure variables
+#' @param from_rt The starting lag period.
+#' @param to_rt The ending lag period.
+#' @param outcome The outcome variable.
+#' @param exposure The exposure variable.
+#' @param unit The unit identifier.
+#' @param time The time variable.
+#' @param covariates Vector of covariates for the model.
+#' @param addl_fes Vector of additional fixed effects for the model.
+#' @param ref_period Reference period (default -1)
+#' @param weights Weights to be included in the regression
+#' @return A list containing model results, coefficients, and plots.
+#' @export
+#' 
+twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd = F, n = 2){
+  
+  # Capture the minimum and maximum time
+  MINTIME = min(data[[time]])
+  MAXTIME = max(data[[time]])
+
+  df = merge(data, exposure_data, by=c(unit, time), all.x = T)
+
+  # It's easier to just assign names to the variables we want to use.
+  # Although this means that the original data can't use these variable names...
+  tmp = df %>% mutate(
+      unit := !!sym(unit),
+      time := !!sym(time),
+      outcome := !!sym(outcome)
+  ) %>% filter(time >= MINTIME + abs(to_rt), time <= MAXTIME - abs(from_rt) + 1)
+
+
+  # Generate the formula
+  if(!is.null(covariates)){
+    covariate_str = paste0(covariates, collapse = ' + ')
+    fmla_str = glue("{outcome} ~ {exposure} + {covariate_str} | unit + time")
+  } else {
+    fmla_str = glue("{outcome} ~ {exposure} | unit + time")
+  }
+  if(!is.null(addl_fes)){
+    addl_fe_str = paste0(addl_fes, collapse = ' + ')
+    fmla_str = glue("{fmla_str} + {addl_fe_str}")
+  }
+
+  # Estimate model with arguments
+  arguments = c("data = tmp", "cluster = ~unit", "fixef.rm = 'none'")
+  if(!is.null(weights)){
+    arguments = c(arguments, glue("weights = ~{weights}"))
+  }
+  cmd = glue("fixest::feols({fmla_str}, {paste0(arguments, collapse = ', ')})")
+  model = eval(parse(text=cmd))
+
+  ct = as.data.frame(coeftable(model))
+  ci = confint(model)
+  beta = ct[1, 1]
+  se = ct[1, 2]
+  tval = ct[1, 3]
+  pval = ct[1, 4]
+  lo95 = ci[1, 1]
+  hi95 = ci[1, 2]
+
+  out = glue("DD beta: {format(beta, nsmall = n)} ({format(lo95, nsmall = n)} to {format(hi95, nsmall = n)}, p = {format(pval, nsmall = n)}), N={comma(nobs(model))}")
+  return(out)
+  
+
+
+}
+  
