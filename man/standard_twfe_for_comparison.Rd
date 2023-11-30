@@ -14,7 +14,8 @@ standard_twfe_for_comparison(
   time_to_treatment,
   treat,
   covariates = NULL,
-  ref_period = -1
+  ref_period = -1,
+  weights = NULL
 )
 }
 \arguments{
