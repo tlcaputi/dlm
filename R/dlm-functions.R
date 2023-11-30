@@ -215,6 +215,12 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   
   log_info("Coefficients:")
   num_vars = abs(from_rt)+to_rt
+  coefficients = model$coefficients
+  if(length(coefficients) != (length(lags) + length(leads) + 1 + length(covariates))){
+    log_info("Not all coefficients were estimated")
+    print(coefficients)
+    stop("Not all coefficients were estimated")
+  }
   print(model$coefficients[1:num_vars])
   
   # Extract coefficients and regressions from the model
