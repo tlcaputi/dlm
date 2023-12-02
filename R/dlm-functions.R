@@ -372,9 +372,6 @@ standard_twfe_for_comparison = function(data, from_rt, to_rt, outcome, time, uni
 }
 
 
-
-
-
 #' TWFE Companion
 #'
 #' This is the companion TWFE, which adds the DD estimate to the bottom of the figure
@@ -439,7 +436,11 @@ twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure
   lo95 = ci[1, 1]
   hi95 = ci[1, 2]
 
-  out = glue("DD beta: {format(beta, nsmall = n)} ({format(lo95, nsmall = n)} to {format(hi95, nsmall = n)}, p = {format(pval, nsmall = n)}), N={comma(nobs(model))}")
+  format0 = function(x, nsmall){
+    return(format(x, digits = nsmall, nsmall = nsmall))
+  }
+
+  out = glue("DD beta: {format0(beta, nsmall = n)} ({format0(lo95, nsmall = n)} to {format0(hi95, nsmall = n)}, p = {format0(pval, nsmall = n)}), N={comma(nobs(model))}")
   return(out)
   
 
