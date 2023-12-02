@@ -435,12 +435,13 @@ twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure
   pval = ct[1, 4]
   lo95 = ci[1, 1]
   hi95 = ci[1, 2]
+  dvm = fitstat(model, "my", simplify = T)
 
   format0 = function(x, nsmall){
     return(format(x, digits = nsmall, nsmall = nsmall))
   }
 
-  out = glue("DD beta: {format0(beta, nsmall = n)} ({format0(lo95, nsmall = n)} to {format0(hi95, nsmall = n)}, p = {format0(pval, nsmall = n)}), N={comma(nobs(model))}")
+  out = glue("DD beta: {format0(beta, nsmall = n)} ({format0(lo95, nsmall = n)} to {format0(hi95, nsmall = n)}, p = {format0(pval, nsmall = n)}), N={comma(nobs(model))}, DVM = {format0(dvm, nsmall = n)}")
   return(out)
   
 
