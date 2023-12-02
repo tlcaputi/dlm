@@ -9,7 +9,6 @@ revcumsum <- function(x){
   x <- rev(cumsum(rev(x)))
 }
 
-
 #' Standard Error Cumulative Sum
 #'
 #' Gives the cumulative sum of a variance-covariance matrix.
@@ -32,8 +31,6 @@ secumsum <- function(vcov){
   }
   return(se)
 }
-
-
 
 #' Reverse Standard Error Cumulative Sum
 #'
@@ -145,8 +142,10 @@ generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 
 distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2){
   
   # Capture the minimum and maximum time
-  MINTIME = min(exposure_data[[time]])
-  MAXTIME = max(exposure_data[[time]])
+  MINTIME = min(exposure_data[[time]], na.rm = T)
+  MAXTIME = max(exposure_data[[time]], na.rm = T)
+  log_info("MINTIME: {MINTIME}")
+  log_info("MAXTIME: {MAXTIME}")
   
   # This tells us the data years that are included
   data_years_included = (MINTIME + abs(to_rt)):(MAXTIME - abs(from_rt) + 1)
@@ -313,8 +312,8 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
 standard_twfe_for_comparison = function(data, from_rt, to_rt, outcome, time, unit, time_to_treatment, treat, covariates = NULL, ref_period = -1, weights = NULL){
 
     # Capture the minimum and maximum time
-    MINTIME = min(data[[time]])
-    MAXTIME = max(data[[time]])
+    MINTIME = min(data[[time]], na.rm = T)
+    MAXTIME = max(data[[time]], na.rm = T)
 
     # It's easier to just assign names to the variables we want to use.
     # Although this means that the original data can't use these variable names...
@@ -397,8 +396,8 @@ standard_twfe_for_comparison = function(data, from_rt, to_rt, outcome, time, uni
 twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd = F, n = 2){
   
   # Capture the minimum and maximum time
-  MINTIME = min(data[[time]])
-  MAXTIME = max(data[[time]])
+  MINTIME = min(data[[time]], na.rm = T)
+  MAXTIME = max(data[[time]], na.rm = T)
 
   df = merge(data, exposure_data, by=c(unit, time), all.x = T)
 
