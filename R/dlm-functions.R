@@ -149,6 +149,10 @@ generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 
 #' 
 distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2){
   
+  if(!(ref_period %in% (from_rt:to_rt))){
+    stop("ref_period must be in from_rt:to_rt")
+  }
+
   # Capture the minimum and maximum time
   MINTIME = min(exposure_data[[time]], na.rm = T)
   MAXTIME = max(exposure_data[[time]], na.rm = T)
@@ -235,24 +239,48 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   vcov = vcov(model, cluster= ~unit)[1:num_vars, 1:num_vars]
   
   # Sum them up to the reference period
-  time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
-  num_before_periods = length(time_to_event[time_to_event < ref_period])
-  before_periods = 1:num_before_periods
-  after_periods = (num_before_periods + 1):num_vars
+
+  if(from_rt == ref_period){
+
+    time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
+    after_periods = 1:num_vars
+
+    coefs = c(
+      cumsum(gamma[after_periods])
+    )
+    ses = c(
+      secumsum(vcov[after_periods, after_periods])
+    )
+    betas = data.frame(
+      time_to_event = time_to_event,
+      coef = coefs,
+      se = ses
+    )
+    
+  } else if(from_rt < ref_period) {
+
+    time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
+    num_before_periods = length(time_to_event[time_to_event < ref_period])
+    before_periods = 1:num_before_periods
+    after_periods = (num_before_periods + 1):num_vars
+    
+
+
+    coefs = c(
+      -revcumsum(gamma[before_periods]),
+      cumsum(gamma[after_periods])
+    )
+    ses = c(
+      serevcumsum(vcov[before_periods, before_periods]),
+      secumsum(vcov[after_periods, after_periods])
+    )
+    betas = data.frame(
+      time_to_event = time_to_event,
+      coef = coefs,
+      se = ses
+    )
+  }
   
-  coefs = c(
-    -revcumsum(gamma[before_periods]),
-    cumsum(gamma[after_periods])
-  )
-  ses = c(
-    serevcumsum(vcov[before_periods, before_periods]),
-    secumsum(vcov[after_periods, after_periods])
-  )
-  betas = data.frame(
-    time_to_event = time_to_event,
-    coef = coefs,
-    se = ses
-  )
   
   # This just creates a plot (adding in reference period)
   # and is not really necessary for the results
