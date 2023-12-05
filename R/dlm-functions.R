@@ -16,21 +16,27 @@ revcumsum <- function(x){
 #' @return A vector of SEs
 #' @export
 #' 
-secumsum <- function(vcov){
-  L <- dim(vcov)[1]
-  # result vector with standard errors
-  se <- c()
-  # loop over elements
-  for (i in c(1:L)){
-    # Variance of cumulative sum from 1 to i
-    # V[ax] = a*V[x]*a', a=[1, ..., 1]
-    # create vector for summation
-    a <- matrix(rep(1,i), nrow = 1)
-    V <- a %*% vcov[1:i,1:i] %*% t(a)
-    se[i] <- sqrt(V)
-  }
-  return(se)
+secumsum <- function(cov) {
+    L <- dim(as.matrix(cov))[1]
+    if (L == 1) {
+        return(c(sqrt(cov)))
+    }
+    # result vector with standard errors
+    se <- c()
+    # loop over elements
+    for (i in c(1:L)) {
+        # variance of cumulative sum from 1 to i
+        # w[ax] = a %*% W %*% a', a=[1, ..., 1]
+        # create vector for summation
+        a <- matrix(rep(1, i), nrow = 1)
+        w <- a %*% cov[1:i, 1:i] %*% t(a)
+        se[i] <- sqrt(w)
+    }
+    return(se)
 }
+
+
+
 
 #' Reverse Standard Error Cumulative Sum
 #'
@@ -39,19 +45,23 @@ secumsum <- function(vcov){
 #' @return A vector of SEs
 #' @export
 #' 
-serevcumsum <- function(vcov){
-  L <- dim(vcov)[1]
-  # result vector with standard errors
-  se <- c()
-  # loop over elements
-  for (i in c(L:1)){
-    # Variance of cumulative sum from i to L
-    # V[ax] = a*V[x]*a', a=[1, ..., 1]
-    a <- matrix(rep(1,L-i+1), nrow = 1)
-    V <- a %*% vcov[i:L,i:L] %*% t(a)
-    se[i] <- sqrt(V)
-  }
-  return(se)
+
+serevcumsum <- function(cov) {
+    L <- dim(as.matrix(cov))[1]
+    if (L == 1) {
+        return(c(sqrt(cov)))
+    }
+    # result vector with standard errors
+    se <- c()
+    # loop over elements
+    for (i in c(L:1)) {
+        # Variance of cumulative sum from i to L
+        # w[ax] = a %*% W %*% a', a=[1, ..., 1]
+        a <- matrix(rep(1, L - i + 1), mrow = 1)
+        v <- a %*% cov[i:L, i:L] %*% t(a)
+        se[i] <- sqrt(v)
+    }
+    return(se)
 }
 
 
