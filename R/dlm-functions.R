@@ -12,7 +12,7 @@ revcumsum <- function(x){
 #' Standard Error Cumulative Sum
 #'
 #' Gives the cumulative sum of a variance-covariance matrix.
-#' @param vcov A variance-covariance matrix
+#' @param cov A variance-covariance matrix
 #' @return A vector of SEs
 #' @export
 #' 
@@ -41,11 +41,10 @@ secumsum <- function(cov) {
 #' Reverse Standard Error Cumulative Sum
 #'
 #' Gives the cumulative sum of a variance-covariance matrix.
-#' @param vcov A variance-covariance matrix
+#' @param cov A variance-covariance matrix
 #' @return A vector of SEs
 #' @export
 #' 
-
 serevcumsum <- function(cov) {
     L <- dim(as.matrix(cov))[1]
     if (L == 1) {
@@ -57,7 +56,7 @@ serevcumsum <- function(cov) {
     for (i in c(L:1)) {
         # Variance of cumulative sum from i to L
         # w[ax] = a %*% W %*% a', a=[1, ..., 1]
-        a <- matrix(rep(1, L - i + 1), mrow = 1)
+        a <- matrix(rep(1, L - i + 1), nrow = 1)
         v <- a %*% cov[i:L, i:L] %*% t(a)
         se[i] <- sqrt(v)
     }
@@ -76,7 +75,6 @@ serevcumsum <- function(cov) {
 #' @return A dataset 
 #' @export
 #' 
-
 generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 0.4){
 
     ## This generates a very simple dataset for a binary, standard TWFE model.
