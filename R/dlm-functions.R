@@ -287,7 +287,19 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
     p = p + labs(caption = out)
   }
 
-  return(list("betas" = betas, "plot" = p, "model" = model, "vcov" = vcov, "data_years_included" = data_years_included, "fmla_str" = fmla_str, "from_rt" = from_rt, "to_rt" = to_rt, "cmd" = cmd))
+  return(list(
+    "betas" = betas, 
+    "plot" = p, 
+    "model" = model, 
+    "vcov" = vcov, 
+    "data_years_included" = data_years_included, 
+    "fmla_str" = fmla_str, 
+    "from_rt" = from_rt, 
+    "to_rt" = to_rt, 
+    "cmd" = cmd,
+    "exposure" = exposure,
+    "outcome" = outcome
+  ))
   
 }
 
@@ -444,7 +456,5 @@ twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure
   out = glue("DD beta: {format0(beta, n)} ({format0(lo95, n)} to {format0(hi95, n)}, p = {format0(pval, n)}), N={comma(nobs(model))}, DVM = {format0(dvm, n)}")
   return(out)
   
-
-
 }
   
