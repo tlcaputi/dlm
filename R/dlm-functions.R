@@ -151,13 +151,13 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   
   for(v in c(unit, time, outcome, covariates, addl_fes)){
     if(!v %in% names(data)){
-      stop(glue("Variable {v} not found in outcome data"))
+      warning(glue("Variable {v} not found in outcome data"))
     }
   }
   
   for(v in c(unit, time, exposure)){
     if(!v %in% names(exposure_data)){
-      stop(glue("Variable {v} not found in outcome data"))
+      warning(glue("Variable {v} not found in outcome data"))
     }
   }
 
