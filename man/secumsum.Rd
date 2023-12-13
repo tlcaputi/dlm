@@ -4,10 +4,10 @@
 \alias{secumsum}
 \title{Standard Error Cumulative Sum}
 \usage{
-secumsum(vcov)
+secumsum(cov)
 }
 \arguments{
-\item{vcov}{A variance-covariance matrix}
+\item{cov}{A variance-covariance matrix}
 }
 \value{
 A vector of SEs

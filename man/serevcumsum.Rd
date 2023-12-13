@@ -4,10 +4,10 @@
 \alias{serevcumsum}
 \title{Reverse Standard Error Cumulative Sum}
 \usage{
-serevcumsum(vcov)
+serevcumsum(cov)
 }
 \arguments{
-\item{vcov}{A variance-covariance matrix}
+\item{cov}{A variance-covariance matrix}
 }
 \value{
 A vector of SEs

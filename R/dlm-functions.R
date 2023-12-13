@@ -149,6 +149,18 @@ generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 
 #' 
 distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2){
   
+  for(v in c(unit, time, outcome, covariates, addl_fes)){
+    if(!v %in% names(data)){
+      stop(glue("Variable {v} not found in outcome data"))
+    }
+  }
+  
+  for(v in c(unit, time, exposure)){
+    if(!v %in% names(exposure_data)){
+      stop(glue("Variable {v} not found in outcome data"))
+    }
+  }
+
   if(!(ref_period %in% (from_rt:to_rt))){
     stop("ref_period must be in from_rt:to_rt")
   }
