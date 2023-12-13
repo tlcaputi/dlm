@@ -2,7 +2,7 @@
 % Please edit documentation in R/cpi-functions.R
 \name{inflation_adjust}
 \alias{inflation_adjust}
-\title{Reverse Cumulative Sum}
+\title{Inflation Adjust}
 \usage{
 inflation_adjust(df, old_price_var, new_price_var, year_var, to_year)
 }

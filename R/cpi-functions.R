@@ -1,4 +1,4 @@
-#' Reverse Cumulative Sum
+#' Inflation Adjust
 #'
 #' Gives the reverse cumulative sum of a vector.
 #' @param df Data frame
@@ -19,7 +19,7 @@ inflation_adjust = function(df, old_price_var, new_price_var, year_var, to_year)
           adjustment_factor
       ) %>%
       unique()
-  df = setDT(df); cpi = setDT(df)
+  df = setDT(df); cpi = setDT(cpi)
   df = merge(df, cpi, by = year_var, all.x = T)
   df = as.data.frame(df)
   df = df %>% 
@@ -31,3 +31,4 @@ inflation_adjust = function(df, old_price_var, new_price_var, year_var, to_year)
   return(df)
 
 }
+
