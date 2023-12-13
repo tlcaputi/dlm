@@ -17,7 +17,9 @@ inflation_adjust = function(df, old_price_var, new_price_var, year_var, to_year)
           year, 
           adjustment_factor
       )
+  df = setDT(df); cpi = setDT(df)
   df = merge(df, cpi, by = "year", all.x = T)
+  df = as.data.frame(df)
   df = df %>% 
     mutate(
         "{new_price_var}" := !!sym(old_price_var) / adjustment_factor
