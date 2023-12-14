@@ -319,7 +319,7 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   p = p + geom_vline(xintercept = ref_period+0.5, linetype = "dashed")
   min_included_year = min(data_years_included, na.rm = T)
   max_included_year = max(data_years_included, na.rm = T)
-  p = p + labs(x = "Time to Treatment", y = "Coefficient", caption = "From {min_included_year} To {max_included_year}")
+  p = p + labs(x = "Time to Treatment", y = "Coefficient", caption = glue("From {min_included_year} To {max_included_year} | {Sys.time()}"))
   p = p + theme_bw()
 
   if(dd){
