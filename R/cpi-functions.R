@@ -9,7 +9,7 @@
 #' @return Dataframe 
 #' @export
 #' 
-inflation_adjust = function(df, old_price_var, new_price_var, year_var, to_year){
+inflation_adjust = function(df, old_price_var, new_price_var, year_var = "year", to_year = 2010){
   data(cpi)
   baseline_val = cpi$cpi[cpi$year == to_year]
   cpi = cpi %>% 
