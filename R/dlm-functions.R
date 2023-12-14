@@ -115,7 +115,7 @@ generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 
             treat == 1 ~ as.numeric(time >= treatment_time)
         ),
         # random outcome with effect size of 4 after treatment
-        outcome = rnorm(n()) + I(years_to_treatment >= 0) * 4
+        outcome = rnorm(n(), sd = 5) + (I(years_to_treatment >= 0) * -3)
     )
 
     # Make it pretty
@@ -183,18 +183,21 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   ## TODO: we only really need to create these once, not every time. Not sure how much time that saves.
   log_info("Creating leads and lags")
   leads = c()
-  for(i in (abs(from_rt) - 1):1){
-    exposure_data = exposure_data %>% 
-      group_by(!!sym(unit)) %>% 
-      mutate(
-        "{exposure}_lead{i}" := dplyr::lead(!!sym(exposure), i)
-      )
-    leads = c(leads, glue("{exposure}_lead{i}"))
-  }
+
+  if(abs(from_rt) > 1){
+    for(i in (abs(from_rt) - 1):1){
+      exposure_data = exposure_data %>% 
+        group_by(!!sym(unit)) %>% 
+        mutate(
+          "{exposure}_lead{i}" := dplyr::lead(!!sym(exposure), i)
+        )
+      leads = c(leads, glue("{exposure}_lead{i}"))
+    }
+  } 
   leads_str = paste0(leads, collapse = " + ")
   
   lags = c()
-  for(i in 1:to_rt){
+  for(i in 0:to_rt){
     exposure_data = exposure_data %>% 
       group_by(!!sym(unit)) %>% 
       mutate(
@@ -213,11 +216,13 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   tmp = tmp %>% mutate(unit := !!sym(unit), time := !!sym(time))
   
   # Generate the formula
+  
+  leads_lags_str = paste0(c(leads, lags), collapse = " + ")
   if(!is.null(covariates)){
     covariate_str = paste0(covariates, collapse = ' + ')
-    fmla_str = glue("{outcome} ~ {leads_str} + {exposure} + {lags_str} + {covariate_str} | unit + time")
+    fmla_str = glue("{outcome} ~ {leads_lags_str} + {covariate_str} | unit + time")
   } else {
-    fmla_str = glue("{outcome} ~ {leads_str} + {exposure} + {lags_str} | unit + time")
+    fmla_str = glue("{outcome} ~ {leads_lags_str} | unit + time")
   }
   if(!is.null(addl_fes)){
     addl_fe_str = paste0(addl_fes, collapse = ' + ')
@@ -235,11 +240,10 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   cmd = glue("fixest::feols({fmla_str}, {paste0(arguments, collapse = ', ')})")
   model = eval(parse(text=cmd))
   
-  
   log_info("Coefficients:")
   num_vars = abs(from_rt)+to_rt
   coefficients = model$coefficients
-  if(length(coefficients) != (length(lags) + length(leads) + 1 + length(covariates))){
+  if(length(coefficients) != (length(lags) + length(leads) + length(covariates))){
     log_info("Not all coefficients were estimated")
     print(coefficients)
     stop("Not all coefficients were estimated")
@@ -256,12 +260,16 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
 
     time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
     after_periods = 1:num_vars
+    log_info("After periods:")
+    print(after_periods)
+    log_info("vcov")
+    print(vcov)
 
     coefs = c(
       cumsum(gamma[after_periods])
     )
     ses = c(
-      secumsum(vcov[after_periods, after_periods])
+      secumsum(as.matrix(vcov)[after_periods, after_periods])
     )
     betas = data.frame(
       time_to_event = time_to_event,
@@ -276,8 +284,6 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
     before_periods = 1:num_before_periods
     after_periods = (num_before_periods + 1):num_vars
     
-
-
     coefs = c(
       -revcumsum(gamma[before_periods]),
       cumsum(gamma[after_periods])
