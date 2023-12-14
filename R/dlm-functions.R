@@ -317,7 +317,9 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   p = p + geom_errorbar(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), width = 0.2, color = "darkblue")
   p = p + geom_hline(yintercept = 0, linetype = "dashed")
   p = p + geom_vline(xintercept = ref_period+0.5, linetype = "dashed")
-  p = p + labs(x = "Time to Treatment", y = "Coefficient")
+  min_included_year = min(data_years_included, na.rm = T)
+  max_included_year = max(data_years_included, na.rm = T)
+  p = p + labs(x = "Time to Treatment", y = "Coefficient", caption = "From {min_included_year} To {max_included_year}")
   p = p + theme_bw()
 
   if(dd){
@@ -338,7 +340,8 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
       n = n
     )
     # out = do.call(twfe_companion, list(...))
-    p = p + labs(caption = out)
+    p = add_caption_to_plot(p, out)
+    # p = p + labs(caption = out)
   }
 
   return(list(
