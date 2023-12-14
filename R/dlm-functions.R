@@ -512,3 +512,39 @@ twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure
   
 }
   
+
+
+
+
+
+#' Get Caption from Plot
+#'
+#' @param p A ggplot object
+#' @return The caption for the ggplot
+#' @export
+#' 
+get_caption_from_plot = function(p){
+    plot_info <- ggplot_build(p)
+    original_caption <- plot_info$plot$labels$caption
+    return(original_caption)
+}
+
+
+#' Add Caption to Plot
+#'
+#' @param p A ggplot object
+#' @param caption_addition The caption to add
+#' @param sep The separator between the original caption and the addition
+#' @return The caption for the ggplot
+#' @export
+#' 
+add_caption_to_plot = function(p, caption_addition, sep="\n"){
+    original_caption = get_caption_from_plot(p)
+    if(is.null(original_caption)){
+        caption = caption_addition
+    } else {
+        caption = glue("{original_caption}{sep}{caption_addition}")
+    }
+    p = p + labs(caption = caption)
+    return(p)
+}

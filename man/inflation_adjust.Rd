@@ -4,7 +4,13 @@
 \alias{inflation_adjust}
 \title{Inflation Adjust}
 \usage{
-inflation_adjust(df, old_price_var, new_price_var, year_var, to_year)
+inflation_adjust(
+  df,
+  old_price_var,
+  new_price_var,
+  year_var = "year",
+  to_year = 2010
+)
 }
 \arguments{
 \item{df}{Data frame}
