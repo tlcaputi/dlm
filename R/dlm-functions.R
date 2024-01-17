@@ -147,7 +147,7 @@ generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 
 #' @return A list containing model results, coefficients, and plots.
 #' @export
 #' 
-distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2){
+distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL){
   
   for(v in c(unit, time, outcome, covariates, addl_fes)){
     if(!v %in% names(data)){
@@ -299,6 +299,19 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
     )
   }
   
+
+  if(!is.null(dict)){
+    if(outcome %in% names(dict)){
+      outcome_name = dict[outcome]
+    } else {
+      outcome_name = "Coefficient"
+    }
+    if(exposure %in% names(dict)){
+      exposure_name = dict[exposure]
+    } else {
+      exposure_name = "Time to Treatment"
+    }
+  }
   
   # This just creates a plot (adding in reference period)
   # and is not really necessary for the results
@@ -319,7 +332,7 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   p = p + geom_vline(xintercept = ref_period+0.5, linetype = "dashed")
   min_included_year = min(data_years_included, na.rm = T)
   max_included_year = max(data_years_included, na.rm = T)
-  p = p + labs(x = "Time to Treatment", y = "Coefficient", caption = glue("From {min_included_year} To {max_included_year} | {Sys.time()}"))
+  p = p + labs(x = exposure_name, y = outcome_name, caption = glue("From {min_included_year} To {max_included_year} | {Sys.time()}"))
   p = p + theme_bw()
 
   if(dd){
