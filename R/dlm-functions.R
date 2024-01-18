@@ -300,17 +300,15 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   }
   
 
+  outcome_name = "Coefficient"
+  exposure_name = "Time to Treatment"
   if(!is.null(dict)){
     if(outcome %in% names(dict)){
       outcome_name = dict[outcome]
-    } else {
-      outcome_name = "Coefficient"
-    }
+    } 
     if(exposure %in% names(dict)){
       exposure_name = dict[exposure]
-    } else {
-      exposure_name = "Time to Treatment"
-    }
+    } 
   }
   
   # This just creates a plot (adding in reference period)
