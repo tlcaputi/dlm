@@ -149,6 +149,10 @@ generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 
 #' 
 distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL){
   
+  try({
+    data = data %>% select(!!sym(exposure))
+  })
+
   for(v in c(unit, time, outcome, covariates, addl_fes)){
     if(!v %in% names(data)){
       warning(glue("Variable {v} not found in outcome data"))
