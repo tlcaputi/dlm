@@ -664,7 +664,9 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
 
   out = lapply(outcomes, function(outcome){
 
-    # Generate the formula
+    res = tryCatch({
+
+# Generate the formula
     leads_lags_str = paste0(c(leads, lags), collapse = " + ")
     if(!is.null(covariates)){
       covariate_str = paste0(covariates, collapse = ' + ')
@@ -817,8 +819,17 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
       "outcome" = outcome
     ))
     
+
+    }, 
+    error = function(cond){
+      return(NULL)
+    })
+
+    return(res)
+    
   })
 
+  out = out[!sapply(out, is.null)]
   return(out)
 
 }
