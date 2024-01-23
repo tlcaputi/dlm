@@ -827,7 +827,7 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     error = function(cond){
       log_info("Error in outcome {outcome}")
       log_info("Returning null")
-      log_info(cond)
+      print(cond)
       return(NULL)
     })
 
