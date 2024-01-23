@@ -662,6 +662,8 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
   # Define unit and time
   tmp = tmp %>% mutate(unit := !!sym(unit), time := !!sym(time))
 
+  print(outcomes)
+
   out = lapply(outcomes, function(outcome){
 
     res = tryCatch({
