@@ -7,7 +7,7 @@ Description: This package provides tools for working with distributed lags model
 RoxygenNote: 7.2.3
 Encoding: UTF-8
 Depends:
-    data.table (>= 1.14.10)
+    data.table (>= 1.14.1),
     logger (>= 0.2.2),
     tidyverse (>= 1.3.0),
     dplyr (>= 1.0.0),
@@ -18,6 +18,7 @@ Depends:
     scales (>= 1.2.1),
     R (>= 2.10)
 Imports:
+    data.table (>= 1.14.1),
     logger (>= 0.2.2),
     tidyverse (>= 1.3.0),
     dplyr (>= 1.0.0),
@@ -26,5 +27,4 @@ Imports:
     ggplot2 (>= 3.3.0),
     fixest (>= 0.11.1),
     scales (>= 1.2.1)
-    data.table (>= 1.14.10)
 LazyData: true
