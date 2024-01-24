@@ -88,6 +88,7 @@ generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 
     times = 1:n_times
     groups = glue("group{1:n_groups}")
     panel = expand.grid(group = groups, time = times)
+    indvl_panel = rbindlist(list(panel, panel))
 
     # Give treat_prob of units a random treatment time between 7:9
     treatments = data.frame(group = groups) %>% 
@@ -95,7 +96,7 @@ generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 
         mutate(
             treatment_time = sample(7:9, size = n(), replace = TRUE)
         )
-    df = merge(panel, treatments, by=c("group"), all.x = T)
+    df = merge(indvl_panel, treatments, by=c("group"), all.x = T)
 
     # Define treatment, years_to_treat, post, and outcome
     df = df %>% mutate(
@@ -171,6 +172,10 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
     data = data %>% select(-!!sym(exposure))
   })
 
+  try({
+    exposure_data = exposure_data %>% select(!!sym(unit), !!sym(time), !!sym(exposure)) %>% unique()
+  })
+
   # Capture the minimum and maximum time
   MINTIME = min(exposure_data[[time]], na.rm = T)
   MAXTIME = max(exposure_data[[time]], na.rm = T)
@@ -216,7 +221,14 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   
   
   # Merge together the data and distance data
+  log_info("2NROW DATA: {nrow(data)}")
+  log_info("2NROW EXPOSURE: {nrow(exposure_data)}")
+  print(data %>% select(unit, time) %>% head())
+  print(exposure_data %>% select(unit, time) %>% head())
+  print(names(data))
+  print(names(exposure_data))
   tmp = merge(data, exposure_data, by=c(unit, time), all.x = T)
+  log_info("2NROW TMP: {nrow(tmp)}")
   
   # Define unit and time
   tmp = tmp %>% mutate(unit := !!sym(unit), time := !!sym(time))
@@ -489,8 +501,12 @@ twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure
       unit := !!sym(unit),
       time := !!sym(time),
       outcome := !!sym(outcome)
-  ) %>% filter(time >= MINTIME + abs(to_rt), time <= MAXTIME - abs(from_rt) + 1)
-
+  ) %>% filter(time >=( MINTIME + abs(to_rt)), time <= (MAXTIME - abs(from_rt) + 1))
+  log_info("DD FROM: {MINTIME + abs(to_rt)}")
+  log_info("DD TO: {MAXTIME - abs(from_rt) + 1}")
+  log_info("DD N: {nrow(tmp)}")
+  log_info("DD FROM2: {min(tmp[[time]], na.rm = T)}")
+  log_info("DD TO2: {max(tmp[[time]], na.rm = T)}")
 
   # Generate the formula
   if(!is.null(covariates)){
@@ -511,6 +527,7 @@ twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure
   }
   cmd = glue("fixest::feols({fmla_str}, {paste0(arguments, collapse = ', ')})")
   model = eval(parse(text=cmd))
+  log_info("DD CMD: {cmd}")
 
   ct = as.data.frame(coeftable(model))
   ci = confint(model)
@@ -521,12 +538,14 @@ twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure
   lo95 = ci[1, 1]
   hi95 = ci[1, 2]
   dvm = fitstat(model, "my", simplify = T)
+  nval = nobs(model)
+  log_info("DD NVAL: {nval}")
 
   format0 = function(x, num_digits){
     return(format(x, digits = num_digits, nsmall = num_digits))
   }
 
-  out = glue("DD beta: {format0(beta, n)} ({format0(lo95, n)} to {format0(hi95, n)}, p = {format0(pval, n)}), N={comma(nobs(model))}, DVM = {format0(dvm, n)}")
+  out = glue("DD beta: {format0(beta, n)} ({format0(lo95, n)} to {format0(hi95, n)}, p = {format0(pval, n)}), N={comma(nval)}, DVM = {format0(dvm, n)}")
   return(out)
   
 }
@@ -612,6 +631,11 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     data = data %>% select(-!!sym(exposure))
   })
 
+  try({
+    exposure_data = exposure_data %>% select(!!sym(unit), !!sym(time), !!sym(exposure)) %>% unique()
+  })
+
+
   # Capture the minimum and maximum time
   MINTIME = min(exposure_data[[time]], na.rm = T)
   MAXTIME = max(exposure_data[[time]], na.rm = T)
@@ -656,7 +680,7 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
   log_info("Done creating leads and lags")
 
   # Merge together the data and distance data
-  data = setDT(data); exposure_data = setDT(exposure_data)
+  # data = setDT(data); exposure_data = setDT(exposure_data)
   tmp = merge(data, exposure_data, by=c(unit, time), all.x = T)
   
   # Define unit and time
@@ -664,7 +688,7 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
 
   print(outcomes)
 
-  out = lapply(outcomes, function(outcome){
+  .list = lapply(outcomes, function(outcome){
 
     res = tryCatch({
     log_info("Processing {outcome}")
@@ -835,8 +859,8 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     
   })
 
-  out = out[!sapply(out, is.null)]
-  return(out)
+  .list = .list[!sapply(.list, is.null)]
+  return(.list)
 
 }
 
