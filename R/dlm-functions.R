@@ -173,8 +173,18 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   })
 
   try({
+    data = data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)))
+  })
+  
+  try({
+    exposure_data = exposure_data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)), !is.na(!!sym(exposure)))
+  })
+
+  try({
     exposure_data = exposure_data %>% select(!!sym(unit), !!sym(time), !!sym(exposure)) %>% unique()
   })
+
+
 
   # Capture the minimum and maximum time
   MINTIME = min(exposure_data[[time]], na.rm = T)
@@ -626,14 +636,24 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     stop("ref_period must be in from_rt:to_rt")
   }
 
+  
   # Make sure that the outcome data doesn't have the exposure in it, which would cause problems in the merges
   try({
     data = data %>% select(-!!sym(exposure))
   })
 
   try({
+    data = data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)))
+  })
+  
+  try({
+    exposure_data = exposure_data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)), !is.na(!!sym(exposure)))
+  })
+
+  try({
     exposure_data = exposure_data %>% select(!!sym(unit), !!sym(time), !!sym(exposure)) %>% unique()
   })
+
 
 
   # Capture the minimum and maximum time
