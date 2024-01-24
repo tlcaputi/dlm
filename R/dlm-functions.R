@@ -500,10 +500,13 @@ standard_twfe_for_comparison = function(data, from_rt, to_rt, outcome, time, uni
 twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd = F, n = 2){
   
   # Capture the minimum and maximum time
-  MINTIME = min(data[[time]], na.rm = T)
-  MAXTIME = max(data[[time]], na.rm = T)
+  MINTIME = min(exposure_data[[time]], na.rm = T)
+  MAXTIME = max(exposure_data[[time]], na.rm = T)
 
   df = merge(data, exposure_data, by=c(unit, time), all.x = T)
+  log_info("DATA N: {nrow(data)}")
+  log_info("DF N: {nrow(df)}")
+  log_info("EXPOSURE N: {nrow(exposure_data)}")
 
   # It's easier to just assign names to the variables we want to use.
   # Although this means that the original data can't use these variable names...
