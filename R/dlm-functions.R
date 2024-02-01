@@ -88,7 +88,7 @@ generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 
     times = 1:n_times
     groups = glue("group{1:n_groups}")
     panel = expand.grid(group = groups, time = times)
-    indvl_panel = rbindlist(list(panel, panel))
+    indvl_panel = rbind.data.frame(panel, panel)
 
     # Give treat_prob of units a random treatment time between 7:9
     treatments = data.frame(group = groups) %>% 
@@ -620,8 +620,10 @@ add_caption_to_plot = function(p, caption_addition, sep="\n"){
 #' @return A list containing model results, coefficients, and plots.
 #' @export
 #' 
-distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL){
+distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols"){
   
+  # if outcomes is a string, make it a vector of that string
+  outcomes = c(outcomes)
 
   for(v in c(unit, time, outcomes, covariates, addl_fes)){
     if(!v %in% names(data)){
@@ -709,7 +711,6 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
   # Define unit and time
   tmp = tmp %>% mutate(unit := !!sym(unit), time := !!sym(time))
 
-  print(outcomes)
 
   .list = lapply(outcomes, function(outcome){
 
@@ -717,12 +718,18 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     log_info("Processing {outcome}")
 
     # Generate the formula
+    if(remove_unit_FE){
+      fe_str = "time"
+    } else {
+      fe_str = "unit + time"
+    }
+
     leads_lags_str = paste0(c(leads, lags), collapse = " + ")
     if(!is.null(covariates)){
       covariate_str = paste0(covariates, collapse = ' + ')
-      fmla_str = glue("{outcome} ~ {leads_lags_str} + {covariate_str} | unit + time")
+      fmla_str = glue("{outcome} ~ {leads_lags_str} + {covariate_str} | {fe_str}")
     } else {
-      fmla_str = glue("{outcome} ~ {leads_lags_str} | unit + time")
+      fmla_str = glue("{outcome} ~ {leads_lags_str} | {fe_str}")
     }
     if(!is.null(addl_fes)){
       addl_fe_str = paste0(addl_fes, collapse = ' + ')
@@ -733,11 +740,11 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     print(fmla_str)
     
     # Estimate model with arguments
-    arguments = c("data = tmp", "cluster = ~unit", "fixef.rm = 'none'")
+    arguments = c("data = tmp", "cluster = ~unit", "fixef.rm = 'none'", addl_arguments)
     if(!is.null(weights)){
       arguments = c(arguments, glue("weights = ~{weights}"))
     }
-    cmd = glue("fixest::feols({fmla_str}, {paste0(arguments, collapse = ', ')})")
+    cmd = glue("fixest::{model_type}({fmla_str}, {paste0(arguments, collapse = ', ')})")
     model = eval(parse(text=cmd))
     
     log_info("Coefficients:")
@@ -883,7 +890,11 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
   })
 
   .list = .list[!sapply(.list, is.null)]
-  return(.list)
+  if(length(.list) == 1){
+    return(.list[[1]])
+  } else {
+    return(.list)
+  }
 
 }
 
