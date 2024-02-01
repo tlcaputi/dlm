@@ -890,7 +890,11 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
   })
 
   .list = .list[!sapply(.list, is.null)]
-  if(length(.list) == 1){
+  
+  if(length(.list) == 0){
+    log_error("No outcomes were estimated")
+    return(NULL)
+  } else if(length(.list) == 1){
     return(.list[[1]])
   } else {
     return(.list)
