@@ -617,6 +617,11 @@ add_caption_to_plot = function(p, caption_addition, sep="\n"){
 #' @param addl_fes Vector of additional fixed effects for the model.
 #' @param ref_period Reference period (default -1)
 #' @param weights Weights to be included in the regression
+#' @param dd Whether to include the DD estimate in the plot
+#' @param n Number of digits to round to (for the DD estimates)
+#' @param dict A dictionary of variable names
+#' @param remove_unit_FE Whether to remove the unit fixed effects
+#' @param addl_arguments Additional arguments to be included in the model, as strings
 #' @return A list containing model results, coefficients, and plots.
 #' @export
 #' 

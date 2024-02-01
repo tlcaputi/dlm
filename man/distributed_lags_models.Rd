@@ -19,7 +19,10 @@ distributed_lags_models(
   weights = NULL,
   dd = F,
   n = 2,
-  dict = NULL
+  dict = NULL,
+  remove_unit_FE = FALSE,
+  addl_arguments = c(),
+  model_type = "feols"
 )
 }
 \arguments{
@@ -44,6 +47,16 @@ distributed_lags_models(
 \item{ref_period}{Reference period (default -1)}
 
 \item{weights}{Weights to be included in the regression}
+
+\item{dd}{Whether to include the DD estimate in the plot}
+
+\item{n}{Number of digits to round to (for the DD estimates)}
+
+\item{dict}{A dictionary of variable names}
+
+\item{remove_unit_FE}{Whether to remove the unit fixed effects}
+
+\item{addl_arguments}{Additional arguments to be included in the model, as strings}
 
 \item{outcome}{The outcome variable.}
 }
