@@ -375,7 +375,8 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
       ref_period = ref_period, 
       weights = weights, 
       dd = dd, 
-      n = n
+      n = n,
+      remove_unit_FE = remove_unit_FE
     )
     # out = do.call(twfe_companion, list(...))
     p = add_caption_to_plot(p, out)
@@ -497,7 +498,7 @@ standard_twfe_for_comparison = function(data, from_rt, to_rt, outcome, time, uni
 #' @return A list containing model results, coefficients, and plots.
 #' @export
 #' 
-twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd = F, n = 2){
+twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd = F, n = 2, remove_unit_FE = FALSE){
   
   # Capture the minimum and maximum time
   MINTIME = min(exposure_data[[time]], na.rm = T)
@@ -521,17 +522,25 @@ twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure
   log_info("DD FROM2: {min(tmp[[time]], na.rm = T)}")
   log_info("DD TO2: {max(tmp[[time]], na.rm = T)}")
 
+  # Add in FEs
+  fes = c("unit", "time", addl_fes)
+  if(remove_unit_FE){
+    fes = c("time", addl_fes)
+  }
+  fes_str = paste0(fes, collapse = ' + ')
+
   # Generate the formula
   if(!is.null(covariates)){
     covariate_str = paste0(covariates, collapse = ' + ')
-    fmla_str = glue("{outcome} ~ {exposure} + {covariate_str} | unit + time")
+    fmla_str = glue("{outcome} ~ {exposure} + {covariate_str} | {fe_str}")
   } else {
-    fmla_str = glue("{outcome} ~ {exposure} | unit + time")
+    fmla_str = glue("{outcome} ~ {exposure} | {fe_str}")
   }
-  if(!is.null(addl_fes)){
-    addl_fe_str = paste0(addl_fes, collapse = ' + ')
-    fmla_str = glue("{fmla_str} + {addl_fe_str}")
-  }
+
+  # if(!is.null(addl_fes)){
+  #   addl_fe_str = paste0(addl_fes, collapse = ' + ')
+  #   fmla_str = glue("{fmla_str} + {addl_fe_str}")
+  # }
 
   # Estimate model with arguments
   arguments = c("data = tmp", "cluster = ~unit", "fixef.rm = 'none'")
