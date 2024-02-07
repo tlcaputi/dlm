@@ -18,7 +18,8 @@ twfe_companion(
   ref_period = -1,
   weights = NULL,
   dd = F,
-  n = 2
+  n = 2,
+  remove_unit_FE = FALSE
 )
 }
 \arguments{

@@ -130,274 +130,274 @@ generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 
 
 
 
-# #' Distributed Lags Model
-# #'
-# #' This is the distributed lags model / continuous event study. 
-# #' @param data A data frame containing the unit, time, outcome, covariates, and any additional fixed effects
-# #' @param exposure_data A data frame containing the unit, time, and exposure variables
-# #' @param from_rt The starting lag period.
-# #' @param to_rt The ending lag period.
-# #' @param outcome The outcome variable.
-# #' @param exposure The exposure variable.
-# #' @param unit The unit identifier.
-# #' @param time The time variable.
-# #' @param covariates Vector of covariates for the model.
-# #' @param addl_fes Vector of additional fixed effects for the model.
-# #' @param ref_period Reference period (default -1)
-# #' @param weights Weights to be included in the regression
-# #' @return A list containing model results, coefficients, and plots.
-# #' @export
-# #' 
-# distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL){
+#' Distributed Lags Model
+#'
+#' This is the distributed lags model / continuous event study. 
+#' @param data A data frame containing the unit, time, outcome, covariates, and any additional fixed effects
+#' @param exposure_data A data frame containing the unit, time, and exposure variables
+#' @param from_rt The starting lag period.
+#' @param to_rt The ending lag period.
+#' @param outcome The outcome variable.
+#' @param exposure The exposure variable.
+#' @param unit The unit identifier.
+#' @param time The time variable.
+#' @param covariates Vector of covariates for the model.
+#' @param addl_fes Vector of additional fixed effects for the model.
+#' @param ref_period Reference period (default -1)
+#' @param weights Weights to be included in the regression
+#' @return A list containing model results, coefficients, and plots.
+#' @export
+#' 
+distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL){
   
 
-#   for(v in c(unit, time, outcome, covariates, addl_fes)){
-#     if(!v %in% names(data)){
-#       warning(glue("Variable {v} not found in outcome data"))
-#     }
-#   }
+  for(v in c(unit, time, outcome, covariates, addl_fes)){
+    if(!v %in% names(data)){
+      warning(glue("Variable {v} not found in outcome data"))
+    }
+  }
   
-#   for(v in c(unit, time, exposure)){
-#     if(!v %in% names(exposure_data)){
-#       warning(glue("Variable {v} not found in outcome data"))
-#     }
-#   }
+  for(v in c(unit, time, exposure)){
+    if(!v %in% names(exposure_data)){
+      warning(glue("Variable {v} not found in outcome data"))
+    }
+  }
 
-#   if(!(ref_period %in% (from_rt:to_rt))){
-#     stop("ref_period must be in from_rt:to_rt")
-#   }
+  if(!(ref_period %in% (from_rt:to_rt))){
+    stop("ref_period must be in from_rt:to_rt")
+  }
 
-#   # Make sure that the outcome data doesn't have the exposure in it, which would cause problems in the merges
-#   try({
-#     data = data %>% select(-!!sym(exposure))
-#   })
+  # Make sure that the outcome data doesn't have the exposure in it, which would cause problems in the merges
+  try({
+    data = data %>% select(-!!sym(exposure))
+  })
 
-#   try({
-#     data = data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)))
-#   })
+  try({
+    data = data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)))
+  })
   
-#   try({
-#     exposure_data = exposure_data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)), !is.na(!!sym(exposure)))
-#   })
+  try({
+    exposure_data = exposure_data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)), !is.na(!!sym(exposure)))
+  })
 
-#   try({
-#     exposure_data = exposure_data %>% select(!!sym(unit), !!sym(time), !!sym(exposure)) %>% unique()
-#   })
+  try({
+    exposure_data = exposure_data %>% select(!!sym(unit), !!sym(time), !!sym(exposure)) %>% unique()
+  })
 
 
 
-#   # Capture the minimum and maximum time
-#   MINTIME = min(exposure_data[[time]], na.rm = T)
-#   MAXTIME = max(exposure_data[[time]], na.rm = T)
-#   log_info("MINTIME: {MINTIME}")
-#   log_info("MAXTIME: {MAXTIME}")
+  # Capture the minimum and maximum time
+  MINTIME = min(exposure_data[[time]], na.rm = T)
+  MAXTIME = max(exposure_data[[time]], na.rm = T)
+  log_info("MINTIME: {MINTIME}")
+  log_info("MAXTIME: {MAXTIME}")
   
-#   # This tells us the data years that are included
-#   data_years_included = (MINTIME + abs(to_rt)):(MAXTIME - abs(from_rt) + 1)
-#   log_info("Data years that could be included, based upon the exposure data")
-#   print(data_years_included)
-#   data_years_included = intersect(data_years_included, unique(data[[time]]))
-#   log_info("Data years that actually are included, based upon the exposure and outcome data")
-#   print(data_years_included)
+  # This tells us the data years that are included
+  data_years_included = (MINTIME + abs(to_rt)):(MAXTIME - abs(from_rt) + 1)
+  log_info("Data years that could be included, based upon the exposure data")
+  print(data_years_included)
+  data_years_included = intersect(data_years_included, unique(data[[time]]))
+  log_info("Data years that actually are included, based upon the exposure and outcome data")
+  print(data_years_included)
   
-#   # Create lag and lead variables in the distance data
-#   ## TODO: we only really need to create these once, not every time. Not sure how much time that saves.
-#   log_info("Creating leads and lags")
-#   leads = c()
+  # Create lag and lead variables in the distance data
+  ## TODO: we only really need to create these once, not every time. Not sure how much time that saves.
+  log_info("Creating leads and lags")
+  leads = c()
 
-#   if(abs(from_rt) > 1){
-#     for(i in (abs(from_rt) - 1):1){
-#       exposure_data = exposure_data %>% 
-#         group_by(!!sym(unit)) %>% 
-#         mutate(
-#           "{exposure}_lead{i}" := dplyr::lead(!!sym(exposure), i)
-#         )
-#       leads = c(leads, glue("{exposure}_lead{i}"))
-#     }
-#   } 
-#   leads_str = paste0(leads, collapse = " + ")
+  if(abs(from_rt) > 1){
+    for(i in (abs(from_rt) - 1):1){
+      exposure_data = exposure_data %>% 
+        group_by(!!sym(unit)) %>% 
+        mutate(
+          "{exposure}_lead{i}" := dplyr::lead(!!sym(exposure), i)
+        )
+      leads = c(leads, glue("{exposure}_lead{i}"))
+    }
+  } 
+  leads_str = paste0(leads, collapse = " + ")
   
-#   lags = c()
-#   for(i in 0:to_rt){
-#     exposure_data = exposure_data %>% 
-#       group_by(!!sym(unit)) %>% 
-#       mutate(
-#         "{exposure}_lag{i}" := dplyr::lag(!!sym(exposure), i)
-#       )
-#     lags = c(lags, glue("{exposure}_lag{i}"))
-#   }
-#   lags_str = paste0(lags, collapse = " + ")
-#   log_info("Done creating leads and lags")
+  lags = c()
+  for(i in 0:to_rt){
+    exposure_data = exposure_data %>% 
+      group_by(!!sym(unit)) %>% 
+      mutate(
+        "{exposure}_lag{i}" := dplyr::lag(!!sym(exposure), i)
+      )
+    lags = c(lags, glue("{exposure}_lag{i}"))
+  }
+  lags_str = paste0(lags, collapse = " + ")
+  log_info("Done creating leads and lags")
   
   
-#   # Merge together the data and distance data
-#   log_info("2NROW DATA: {nrow(data)}")
-#   log_info("2NROW EXPOSURE: {nrow(exposure_data)}")
-#   print(data %>% select(unit, time) %>% head())
-#   print(exposure_data %>% select(unit, time) %>% head())
-#   print(names(data))
-#   print(names(exposure_data))
-#   tmp = merge(data, exposure_data, by=c(unit, time), all.x = T)
-#   log_info("2NROW TMP: {nrow(tmp)}")
+  # Merge together the data and distance data
+  log_info("2NROW DATA: {nrow(data)}")
+  log_info("2NROW EXPOSURE: {nrow(exposure_data)}")
+  print(data %>% select(unit, time) %>% head())
+  print(exposure_data %>% select(unit, time) %>% head())
+  print(names(data))
+  print(names(exposure_data))
+  tmp = merge(data, exposure_data, by=c(unit, time), all.x = T)
+  log_info("2NROW TMP: {nrow(tmp)}")
   
-#   # Define unit and time
-#   tmp = tmp %>% mutate(unit := !!sym(unit), time := !!sym(time))
+  # Define unit and time
+  tmp = tmp %>% mutate(unit := !!sym(unit), time := !!sym(time))
   
-#   # Generate the formula
-#   leads_lags_str = paste0(c(leads, lags), collapse = " + ")
-#   if(!is.null(covariates)){
-#     covariate_str = paste0(covariates, collapse = ' + ')
-#     fmla_str = glue("{outcome} ~ {leads_lags_str} + {covariate_str} | unit + time")
-#   } else {
-#     fmla_str = glue("{outcome} ~ {leads_lags_str} | unit + time")
-#   }
-#   if(!is.null(addl_fes)){
-#     addl_fe_str = paste0(addl_fes, collapse = ' + ')
-#     fmla_str = glue("{fmla_str} + {addl_fe_str}")
-#   }
+  # Generate the formula
+  leads_lags_str = paste0(c(leads, lags), collapse = " + ")
+  if(!is.null(covariates)){
+    covariate_str = paste0(covariates, collapse = ' + ')
+    fmla_str = glue("{outcome} ~ {leads_lags_str} + {covariate_str} | unit + time")
+  } else {
+    fmla_str = glue("{outcome} ~ {leads_lags_str} | unit + time")
+  }
+  if(!is.null(addl_fes)){
+    addl_fe_str = paste0(addl_fes, collapse = ' + ')
+    fmla_str = glue("{fmla_str} + {addl_fe_str}")
+  }
   
-#   log_info("Formula:")
-#   print(fmla_str)
+  log_info("Formula:")
+  print(fmla_str)
   
-#   # Estimate model with arguments
-#   arguments = c("data = tmp", "cluster = ~unit", "fixef.rm = 'none'")
-#   if(!is.null(weights)){
-#     arguments = c(arguments, glue("weights = ~{weights}"))
-#   }
-#   cmd = glue("fixest::feols({fmla_str}, {paste0(arguments, collapse = ', ')})")
-#   model = eval(parse(text=cmd))
+  # Estimate model with arguments
+  arguments = c("data = tmp", "cluster = ~unit", "fixef.rm = 'none'")
+  if(!is.null(weights)){
+    arguments = c(arguments, glue("weights = ~{weights}"))
+  }
+  cmd = glue("fixest::feols({fmla_str}, {paste0(arguments, collapse = ', ')})")
+  model = eval(parse(text=cmd))
   
-#   log_info("Coefficients:")
-#   num_vars = abs(from_rt)+to_rt
-#   coefficients = model$coefficients
-#   if(length(coefficients) != (length(lags) + length(leads) + length(covariates))){
-#     log_info("Not all coefficients were estimated")
-#     print(coefficients)
-#     stop("Not all coefficients were estimated")
-#   }
-#   print(model$coefficients[1:num_vars])
+  log_info("Coefficients:")
+  num_vars = abs(from_rt)+to_rt
+  coefficients = model$coefficients
+  if(length(coefficients) != (length(lags) + length(leads) + length(covariates))){
+    log_info("Not all coefficients were estimated")
+    print(coefficients)
+    stop("Not all coefficients were estimated")
+  }
+  print(model$coefficients[1:num_vars])
   
-#   # Extract coefficients and regressions from the model
-#   gamma = model$coefficients[1:num_vars]
-#   vcov = vcov(model, cluster= ~unit)[1:num_vars, 1:num_vars]
+  # Extract coefficients and regressions from the model
+  gamma = model$coefficients[1:num_vars]
+  vcov = vcov(model, cluster= ~unit)[1:num_vars, 1:num_vars]
   
-#   # Sum them up to the reference period
+  # Sum them up to the reference period
 
-#   if(from_rt == ref_period){
+  if(from_rt == ref_period){
 
-#     time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
-#     after_periods = 1:num_vars
-#     log_info("After periods:")
-#     print(after_periods)
-#     log_info("vcov")
-#     print(vcov)
+    time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
+    after_periods = 1:num_vars
+    log_info("After periods:")
+    print(after_periods)
+    log_info("vcov")
+    print(vcov)
 
-#     coefs = c(
-#       cumsum(gamma[after_periods])
-#     )
-#     ses = c(
-#       secumsum(as.matrix(vcov)[after_periods, after_periods])
-#     )
-#     betas = data.frame(
-#       time_to_event = time_to_event,
-#       coef = coefs,
-#       se = ses
-#     )
+    coefs = c(
+      cumsum(gamma[after_periods])
+    )
+    ses = c(
+      secumsum(as.matrix(vcov)[after_periods, after_periods])
+    )
+    betas = data.frame(
+      time_to_event = time_to_event,
+      coef = coefs,
+      se = ses
+    )
     
-#   } else if(from_rt < ref_period) {
+  } else if(from_rt < ref_period) {
 
-#     time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
-#     num_before_periods = length(time_to_event[time_to_event < ref_period])
-#     before_periods = 1:num_before_periods
-#     after_periods = (num_before_periods + 1):num_vars
+    time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
+    num_before_periods = length(time_to_event[time_to_event < ref_period])
+    before_periods = 1:num_before_periods
+    after_periods = (num_before_periods + 1):num_vars
     
-#     coefs = c(
-#       -revcumsum(gamma[before_periods]),
-#       cumsum(gamma[after_periods])
-#     )
-#     ses = c(
-#       serevcumsum(vcov[before_periods, before_periods]),
-#       secumsum(vcov[after_periods, after_periods])
-#     )
-#     betas = data.frame(
-#       time_to_event = time_to_event,
-#       coef = coefs,
-#       se = ses
-#     )
-#   }
+    coefs = c(
+      -revcumsum(gamma[before_periods]),
+      cumsum(gamma[after_periods])
+    )
+    ses = c(
+      serevcumsum(vcov[before_periods, before_periods]),
+      secumsum(vcov[after_periods, after_periods])
+    )
+    betas = data.frame(
+      time_to_event = time_to_event,
+      coef = coefs,
+      se = ses
+    )
+  }
   
 
-#   outcome_name = "Coefficient"
-#   exposure_name = "Time to Treatment"
-#   if(!is.null(dict)){
-#     if(outcome %in% names(dict)){
-#       outcome_name = dict[outcome]
-#     } 
-#     if(exposure %in% names(dict)){
-#       exposure_name = dict[exposure]
-#     } 
-#   }
+  outcome_name = "Coefficient"
+  exposure_name = "Time to Treatment"
+  if(!is.null(dict)){
+    if(outcome %in% names(dict)){
+      outcome_name = dict[outcome]
+    } 
+    if(exposure %in% names(dict)){
+      exposure_name = dict[exposure]
+    } 
+  }
   
-#   # This just creates a plot (adding in reference period)
-#   # and is not really necessary for the results
-#   plotdf = rbind.data.frame(betas, data.frame(time_to_event = ref_period, coef = 0, se = 0))
-#   plotdf = plotdf %>% mutate(
-#     time_to_event_str = case_when(
-#       time_to_event == from_rt ~ glue("{from_rt}+"),
-#       time_to_event == to_rt ~ glue("{to_rt}+"),
-#       T ~ as.character(time_to_event)
-#     )
-#   )
-#   plotdf = plotdf %>% arrange(time_to_event)
-#   p = ggplot(plotdf, aes(x = time_to_event, y = coef))
-#   p = p + geom_line(color = "darkblue")
-#   p = p + geom_point(color = "darkblue")
-#   p = p + geom_errorbar(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), width = 0.2, color = "darkblue")
-#   p = p + geom_hline(yintercept = 0, linetype = "dashed")
-#   p = p + geom_vline(xintercept = ref_period+0.5, linetype = "dashed")
-#   min_included_year = min(data_years_included, na.rm = T)
-#   max_included_year = max(data_years_included, na.rm = T)
-#   p = p + labs(x = exposure_name, y = outcome_name, caption = glue("N={comma(nobs(model))} | From {min_included_year} To {max_included_year} | {Sys.time()}"))
-#   p = p + theme_bw()
+  # This just creates a plot (adding in reference period)
+  # and is not really necessary for the results
+  plotdf = rbind.data.frame(betas, data.frame(time_to_event = ref_period, coef = 0, se = 0))
+  plotdf = plotdf %>% mutate(
+    time_to_event_str = case_when(
+      time_to_event == from_rt ~ glue("{from_rt}+"),
+      time_to_event == to_rt ~ glue("{to_rt}+"),
+      T ~ as.character(time_to_event)
+    )
+  )
+  plotdf = plotdf %>% arrange(time_to_event)
+  p = ggplot(plotdf, aes(x = time_to_event, y = coef))
+  p = p + geom_line(color = "darkblue")
+  p = p + geom_point(color = "darkblue")
+  p = p + geom_errorbar(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), width = 0.2, color = "darkblue")
+  p = p + geom_hline(yintercept = 0, linetype = "dashed")
+  p = p + geom_vline(xintercept = ref_period+0.5, linetype = "dashed")
+  min_included_year = min(data_years_included, na.rm = T)
+  max_included_year = max(data_years_included, na.rm = T)
+  p = p + labs(x = exposure_name, y = outcome_name, caption = glue("N={comma(nobs(model))} | From {min_included_year} To {max_included_year} | {Sys.time()}"))
+  p = p + theme_bw()
 
-#   if(dd){
-#     out = twfe_companion(
-#       data = data, 
-#       exposure_data = exposure_data, 
-#       from_rt = from_rt, 
-#       to_rt = to_rt, 
-#       outcome = outcome, 
-#       exposure = exposure, 
-#       unit = unit, 
-#       time = time, 
-#       covariates = covariates, 
-#       addl_fes = addl_fes, 
-#       ref_period = ref_period, 
-#       weights = weights, 
-#       dd = dd, 
-#       n = n,
-#       remove_unit_FE = remove_unit_FE
-#     )
-#     # out = do.call(twfe_companion, list(...))
-#     p = add_caption_to_plot(p, out)
-#     # p = p + labs(caption = out)
-#   }
+  if(dd){
+    out = twfe_companion(
+      data = data, 
+      exposure_data = exposure_data, 
+      from_rt = from_rt, 
+      to_rt = to_rt, 
+      outcome = outcome, 
+      exposure = exposure, 
+      unit = unit, 
+      time = time, 
+      covariates = covariates, 
+      addl_fes = addl_fes, 
+      ref_period = ref_period, 
+      weights = weights, 
+      dd = dd, 
+      n = n,
+      remove_unit_FE = remove_unit_FE
+    )
+    # out = do.call(twfe_companion, list(...))
+    p = add_caption_to_plot(p, out)
+    # p = p + labs(caption = out)
+  }
 
-#   return(list(
-#     "betas" = betas, 
-#     "plot" = p, 
-#     "model" = model, 
-#     "vcov" = vcov, 
-#     "data_years_included" = data_years_included, 
-#     "fmla_str" = fmla_str, 
-#     "from_rt" = from_rt, 
-#     "to_rt" = to_rt, 
-#     "cmd" = cmd,
-#     "exposure" = exposure,
-#     "outcome" = outcome
-#   ))
+  return(list(
+    "betas" = betas, 
+    "plot" = p, 
+    "model" = model, 
+    "vcov" = vcov, 
+    "data_years_included" = data_years_included, 
+    "fmla_str" = fmla_str, 
+    "from_rt" = from_rt, 
+    "to_rt" = to_rt, 
+    "cmd" = cmd,
+    "exposure" = exposure,
+    "outcome" = outcome
+  ))
   
-# }
+}
 
 
 
