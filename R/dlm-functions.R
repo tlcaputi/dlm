@@ -184,9 +184,25 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
     exposure_data = exposure_data %>% select(!!sym(unit), !!sym(time), !!sym(exposure)) %>% unique()
   })
 
+
   if(!plm::is.pbalanced(exposure_data, index = c(unit, time))){
-    stop("The exposure data is not balanced after taking unique values of unit, time, and exposure.")
+    warning("
+
+    ****** WARNING!!!! ******
+    The exposure data is not balanced after taking unique values of unit, time, and exposure.
+    We are going to fill in the missing values with NAs. You should make sure this is okay.
+    
+    ")
+
+    min_time = min(exposure_data[[time]], na.rm = T)
+    max_time = max(exposure_data[[time]], na.rm = T)
+    cmd = glue("
+      exposure_data = exposure_data %>% tidyr::complete({unit}, {time}={min_time}:{max_time})
+    ")
+    eval(parse(text=cmd))
+    # exposure_data = exposure_data %>% tidyr::complete(!!sym(unit), !!sym(time))
   }
+
 
 
 
@@ -685,7 +701,14 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     We are going to fill in the missing values with NAs. You should make sure this is okay.
     
     ")
-    exposure_data = exposure_data %>% tidyr::complete(!!sym(unit), !!sym(time))
+
+    min_time = min(exposure_data[[time]], na.rm = T)
+    max_time = max(exposure_data[[time]], na.rm = T)
+    cmd = glue("
+      exposure_data = exposure_data %>% tidyr::complete({unit}, {time}={min_time}:{max_time})
+    ")
+    eval(parse(text=cmd))
+    # exposure_data = exposure_data %>% tidyr::complete(!!sym(unit), !!sym(time))
   }
 
 
