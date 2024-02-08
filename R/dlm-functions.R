@@ -184,6 +184,10 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
     exposure_data = exposure_data %>% select(!!sym(unit), !!sym(time), !!sym(exposure)) %>% unique()
   })
 
+  if(!plm::is.pbalanced(exposure_data, index = c(unit, time))){
+    stop("The exposure data is not balanced after taking unique values of unit, time, and exposure.")
+  }
+
 
 
   # Capture the minimum and maximum time
@@ -672,6 +676,10 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
   try({
     exposure_data = exposure_data %>% select(!!sym(unit), !!sym(time), !!sym(exposure)) %>% unique()
   })
+
+  if(!plm::is.pbalanced(exposure_data, index = c(unit, time))){
+    stop("The exposure data is not balanced after taking unique values of unit, time, and exposure.")
+  }
 
 
 
