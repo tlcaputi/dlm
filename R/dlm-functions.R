@@ -678,7 +678,14 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
   })
 
   if(!plm::is.pbalanced(exposure_data, index = c(unit, time))){
-    stop("The exposure data is not balanced after taking unique values of unit, time, and exposure.")
+    warning("
+
+    ****** WARNING!!!! ******
+    The exposure data is not balanced after taking unique values of unit, time, and exposure.
+    We are going to fill in the missing values with NAs. You should make sure this is okay.
+    
+    ")
+    exposure_data = exposure_data %>% tidyr::complete(!!sym(unit), !!sym(time))
   }
 
 
