@@ -17,52 +17,57 @@ distributed_lags_models(
   addl_fes = NULL,
   ref_period = -1,
   weights = NULL,
-  dd = F,
+  dd = FALSE,
   n = 2,
   dict = NULL,
+  try_catch = TRUE,
   remove_unit_FE = FALSE,
   addl_arguments = c(),
   model_type = "feols"
 )
 }
 \arguments{
-\item{data}{A data frame containing the unit, time, outcome, covariates, and any additional fixed effects}
+\item{data}{A data frame with outcome, covariates, and fixed effects.}
 
-\item{exposure_data}{A data frame containing the unit, time, and exposure variables}
+\item{exposure_data}{A data frame with the exposure variable.}
 
-\item{from_rt}{The starting lag period.}
+\item{from_rt}{Starting lag period (e.g., -4).}
 
-\item{to_rt}{The ending lag period.}
+\item{to_rt}{Ending lag period (e.g., 4).}
 
-\item{exposure}{The exposure variable.}
+\item{outcomes}{Character vector of outcome variables.}
 
-\item{unit}{The unit identifier.}
+\item{exposure}{Name of the exposure variable.}
 
-\item{time}{The time variable.}
+\item{unit}{Unit identifier (e.g., ZIP code, patient ID).}
 
-\item{covariates}{Vector of covariates for the model.}
+\item{time}{Time variable (e.g., year).}
 
-\item{addl_fes}{Vector of additional fixed effects for the model.}
+\item{covariates}{Optional vector of covariates.}
 
-\item{ref_period}{Reference period (default -1)}
+\item{addl_fes}{Optional vector of additional fixed effects.}
 
-\item{weights}{Weights to be included in the regression}
+\item{ref_period}{Reference period (default -1).}
 
-\item{dd}{Whether to include the DD estimate in the plot}
+\item{weights}{Optional weights variable.}
 
-\item{n}{Number of digits to round to (for the DD estimates)}
+\item{dd}{If TRUE, adds a TWFE-style DD estimate to the plot caption.}
 
-\item{dict}{A dictionary of variable names}
+\item{n}{Rounding for DD estimate (default = 2).}
 
-\item{remove_unit_FE}{Whether to remove the unit fixed effects}
+\item{dict}{Named character vector mapping variable names to pretty labels.}
 
-\item{addl_arguments}{Additional arguments to be included in the model, as strings}
+\item{try_catch}{If TRUE, wraps each model in tryCatch() and skips failed models.}
 
-\item{outcome}{The outcome variable.}
+\item{remove_unit_FE}{If TRUE, removes unit-level fixed effects.}
+
+\item{addl_arguments}{Extra string arguments to pass into the model.}
+
+\item{model_type}{"feols" (default) or other fixest model type.}
 }
 \value{
-A list containing model results, coefficients, and plots.
+A list (or single element) with model, plot, coefficients, and details.
 }
 \description{
-This is the distributed lags model / continuous event study. It allows for multiple outcomes.
+Estimate distributed lags models (continuous event studies) for one or more outcomes.
 }
