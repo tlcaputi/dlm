@@ -465,7 +465,7 @@ distributed_lags_models <- function(data, exposure_data, from_rt, to_rt, outcome
 
       outcome_label <- if (!is.null(dict) && outcome %in% names(dict)) dict[[outcome]] else outcome
       exposure_label <- if (!is.null(dict) && exposure %in% names(dict)) dict[[exposure]] else exposure
-      y_label <- glue::glue("Periods to 1-Unit Change in {exposure_label}")
+      x_label <- glue::glue("Periods to 1-Unit Change in {exposure_label}")
 
       plotdf <- rbind(betas, data.frame(time_to_event = ref_period, coef = 0, se = 0)) |>
         dplyr::mutate(
@@ -483,8 +483,8 @@ distributed_lags_models <- function(data, exposure_data, from_rt, to_rt, outcome
         ggplot2::geom_hline(yintercept = 0, linetype = "dashed") +
         ggplot2::geom_vline(xintercept = ref_period + 0.5, linetype = "dashed") +
         ggplot2::labs(
-          x = exposure_label,
-          y = y_label,
+          x = x_label,
+          y = outcome_label,
           caption = glue::glue("N={scales::comma(stats::nobs(model))} | From {min(data_years_included)} To {max(data_years_included)} | {Sys.time()}")
         ) +
         ggplot2::theme_bw()
