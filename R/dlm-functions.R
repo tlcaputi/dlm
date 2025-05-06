@@ -518,10 +518,16 @@ distributed_lags_models <- function(data, exposure_data, from_rt, to_rt, outcome
   })
 
   results <- results[!sapply(results, is.null)]
+  # if (length(results) == 0) {
+  #   log_error("No outcomes were estimated"); return(NULL)
+  # } else if (length(results) == 1) {
+  #   return(results[[1]])
+  # } else {
+  #   return(results)
+  # }
+
   if (length(results) == 0) {
     log_error("No outcomes were estimated"); return(NULL)
-  } else if (length(results) == 1) {
-    return(results[[1]])
   } else {
     return(results)
   }
