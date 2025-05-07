@@ -869,13 +869,13 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     
 
     outcome_name = "Coefficient"
-    exposure_name = "Time to Treatment"
+    exposure_name = "Time to Unit Change"
     if(!is.null(dict)){
       if(outcome %in% names(dict)){
         outcome_name = dict[outcome]
       } 
       if(exposure %in% names(dict)){
-        exposure_name = dict[exposure]
+        exposure_name = glue("Time to Unit Change in {dict[exposure]}")
       } 
     }
     
