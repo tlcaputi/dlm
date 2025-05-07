@@ -541,6 +541,7 @@ twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure
       time := !!sym(time),
       outcome := !!sym(outcome)
   ) %>% filter(time >=( MINTIME + abs(to_rt)), time <= (MAXTIME - abs(from_rt) + 1))
+  
   log_info("DD FROM: {MINTIME + abs(to_rt)}")
   log_info("DD TO: {MAXTIME - abs(from_rt) + 1}")
   log_info("DD N: {nrow(tmp)}")
@@ -817,7 +818,8 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
       stop("Not all coefficients were estimated")
     }
     print(model$coefficients[1:num_vars])
-    
+    nobs_model = nobs(model)
+    log_info("DLM Model has N = {comma(nobs_model)}")
     # Extract coefficients and regressions from the model
     gamma = model$coefficients[1:num_vars]
     vcov = vcov(model, cluster= ~unit)[1:num_vars, 1:num_vars]
@@ -898,7 +900,7 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     p = p + geom_vline(xintercept = ref_period+0.5, linetype = "dashed")
     min_included_year = min(data_years_included, na.rm = T)
     max_included_year = max(data_years_included, na.rm = T)
-    cap = glue("N={comma(nobs(model))} | From {min_included_year} To {max_included_year} | {Sys.time()}")
+    cap = glue("N={comma(nobs_model)} | From {min_included_year} To {max_included_year} | {Sys.time()}")
     log_info("CAPTION: {cap}")
     p = p + labs(x = exposure_name, y = outcome_name, caption = cap)
     p = p + theme_bw()
