@@ -924,6 +924,7 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
       )
       # out = do.call(twfe_companion, list(...))
       p = add_caption_to_plot(p, out)
+      log_info("ADDED TO CAPTION: {out}")
       # p = p + labs(caption = out)
     }
 
