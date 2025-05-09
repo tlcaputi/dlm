@@ -374,6 +374,7 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
     )
   )
   plotdf = plotdf %>% arrange(time_to_event)
+  plotdf %>% as.data.frame() %>% print()
   p = ggplot(plotdf, aes(x = time_to_event, y = coef))
   p = p + geom_line(color = "darkblue")
   p = p + geom_point(color = "darkblue")
