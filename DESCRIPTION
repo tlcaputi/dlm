@@ -4,7 +4,7 @@ Title: Distributed Lags Models
 Version: 0.0.1
 Author: Theo Caputi <tcaputi@gmail.com>
 Description: This package provides tools for working with distributed lags models.
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 Encoding: UTF-8
 Depends:
     logger (>= 0.2.2),
