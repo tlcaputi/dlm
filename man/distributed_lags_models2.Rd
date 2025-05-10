@@ -2,7 +2,7 @@
 % Please edit documentation in R/dlm-functions.R
 \name{distributed_lags_models2}
 \alias{distributed_lags_models2}
-\title{Distributed Lags Models2}
+\title{Distributed Lags Models v2}
 \usage{
 distributed_lags_models2(
   data,
@@ -64,5 +64,5 @@ distributed_lags_models2(
 A list containing model results, coefficients, and plots.
 }
 \description{
-This is the distributed lags model / continuous event study. It allows for multiple outcomes.
+This is experimental but may be faster for multiple outcomes.
 }
