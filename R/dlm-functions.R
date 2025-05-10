@@ -1146,11 +1146,12 @@ distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcome
     arguments = c(arguments, glue("weights = ~{weights}"))
   }
   cmd = glue("fixest::{model_type}({fmla_str}, {paste0(arguments, collapse = ', ')})")
+  print(cmd)
   models = eval(parse(text=cmd))
 
   .list = lapply(models, function(model){
 
-    outcome <- all.vars(formula(model))[1]
+    outcome <- as.character(formula(model))[2]
 
     res = tryCatch({
     log_info("Processing {outcome}")
