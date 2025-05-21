@@ -904,7 +904,7 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     p = ggplot(plotdf, aes(x = time_to_event, y = coef))
     if(tolower(plot_type) == "ribbon"){
       p = p + 
-      geom_ribbon(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se), fill = "lightblue", alpha = 0.4) +
+      geom_ribbon(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se), fill = "lightgrey", alpha = 0.6) +
       geom_line(aes(y = coef), color = "darkblue") +
       geom_point(aes(y = coef), color = "darkblue")
     } else {
@@ -1291,7 +1291,7 @@ distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcome
       p = ggplot(plotdf, aes(x = time_to_event, y = coef))
       if(tolower(plot_type) == "ribbon"){
         p = p + 
-        geom_ribbon(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se), fill = "lightblue", alpha = 0.4) +
+        geom_ribbon(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se), fill = "lightgrey", alpha = 0.6) +
         geom_line(aes(y = coef), color = "darkblue") +
         geom_point(aes(y = coef), color = "darkblue")
       } else {
