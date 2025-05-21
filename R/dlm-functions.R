@@ -304,18 +304,20 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   
   # Extract coefficients and regressions from the model
   gamma = model$coefficients[1:num_vars]
-  vcov = vcov(model, cluster= ~unit)[1:num_vars, 1:num_vars]
-  
-  # Sum them up to the reference period
 
+  log_info("Estimating vcov")
+  vcov = vcov(model, cluster= ~unit)[1:num_vars, 1:num_vars]
+  log_info("Done estimating vcov")
+
+  # Sum them up to the reference period
   if(from_rt == ref_period){
 
     time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
     after_periods = 1:num_vars
-    log_info("After periods:")
-    print(after_periods)
-    log_info("vcov")
-    print(vcov)
+    # log_info("After periods:")
+    # print(after_periods)
+    # log_info("vcov")
+    # print(vcov)
 
     coefs = c(
       cumsum(gamma[after_periods])
@@ -661,7 +663,7 @@ add_caption_to_plot = function(p, caption_addition, sep="\n"){
 #' @return A list containing model results, coefficients, and plots.
 #' @export
 #' 
-distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols"){
+distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols", plot_type = "coefplot"){
   
   # if outcomes is a string, make it a vector of that string
   outcomes = c(outcomes)
@@ -823,7 +825,11 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     log_info("DLM Model has N = {comma(nobs_model)}")
     # Extract coefficients and regressions from the model
     gamma = model$coefficients[1:num_vars]
+
+    log_info("Estimating vcov")
     vcov = vcov(model, cluster= ~unit)[1:num_vars, 1:num_vars]
+    log_info("Done estimating vcov")
+
     
     # Sum them up to the reference period
 
@@ -894,9 +900,16 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     )
     plotdf = plotdf %>% arrange(time_to_event)
     p = ggplot(plotdf, aes(x = time_to_event, y = coef))
-    p = p + geom_line(color = "darkblue")
-    p = p + geom_point(color = "darkblue")
-    p = p + geom_errorbar(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), width = 0.2, color = "darkblue")
+    if(tolower(plot_type) == "ribbon"){
+      p = p + 
+      geom_ribbon(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se), fill = "lightblue", alpha = 0.4) +
+      geom_line(aes(y = coef), color = "darkblue") +
+      geom_point(aes(y = coef), color = "darkblue")
+    } else {
+      p = p + geom_line(color = "darkblue")
+      p = p + geom_point(color = "darkblue")
+      p = p + geom_errorbar(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), width = 0.2, color = "darkblue")
+    }
     p = p + geom_hline(yintercept = 0, linetype = "dashed")
     p = p + geom_vline(xintercept = ref_period+0.5, linetype = "dashed")
     min_included_year = min(data_years_included, na.rm = T)
@@ -1332,6 +1345,7 @@ distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcome
       return(NULL)
     })
     
+    gc()
     return(res)
     
   })
