@@ -660,10 +660,12 @@ add_caption_to_plot = function(p, caption_addition, sep="\n"){
 #' @param dict A dictionary of variable names
 #' @param remove_unit_FE Whether to remove the unit fixed effects
 #' @param addl_arguments Additional arguments to be included in the model, as strings
+#' @param model_type The type of model to be used (default is "feols")
+#' @param plot_type The type of plot to be used (default is "ribbon")
 #' @return A list containing model results, coefficients, and plots.
 #' @export
 #' 
-distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols", plot_type = "coefplot"){
+distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols", plot_type = "ribbon"){
   
   # if outcomes is a string, make it a vector of that string
   outcomes = c(outcomes)
@@ -1018,7 +1020,7 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
 #' @return A list containing model results, coefficients, and plots.
 #' @export
 #' 
-distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols"){
+distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols", plot_type = "ribbon"){
   
   # if outcomes is a string, make it a vector of that string
   outcomes = c(outcomes)
@@ -1287,9 +1289,16 @@ distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcome
       )
       plotdf = plotdf %>% arrange(time_to_event)
       p = ggplot(plotdf, aes(x = time_to_event, y = coef))
-      p = p + geom_line(color = "darkblue")
-      p = p + geom_point(color = "darkblue")
-      p = p + geom_errorbar(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), width = 0.2, color = "darkblue")
+      if(tolower(plot_type) == "ribbon"){
+        p = p + 
+        geom_ribbon(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se), fill = "lightblue", alpha = 0.4) +
+        geom_line(aes(y = coef), color = "darkblue") +
+        geom_point(aes(y = coef), color = "darkblue")
+      } else {
+        p = p + geom_line(color = "darkblue")
+        p = p + geom_point(color = "darkblue")
+        p = p + geom_errorbar(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), width = 0.2, color = "darkblue")
+      }
       p = p + geom_hline(yintercept = 0, linetype = "dashed")
       p = p + geom_vline(xintercept = ref_period+0.5, linetype = "dashed")
       min_included_year = min(data_years_included, na.rm = T)
