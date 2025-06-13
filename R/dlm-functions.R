@@ -1059,6 +1059,18 @@ distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcome
     exposure_data = exposure_data %>% select(!!sym(unit), !!sym(time), !!sym(exposure)) %>% unique()
   })
   
+
+  log_info("========== RUNNING DISTRIBUTED LAGS MODELS ===========")
+  log_info("Data N: {nrow(data)}")
+  log_info("Exposure Data N: {nrow(exposure_data)}")
+  log_info("From RT: {from_rt}")
+  log_info("To RT: {to_rt}")
+  log_info("Outcomes: {paste(outcomes, collapse = ', ')}")
+  log_info("Exposure: {exposure}")
+  log_info("Unit: {unit}")
+  log_info("Time: {time}")
+  log_info("====================================================")
+
   
   if(!plm::is.pbalanced(exposure_data, index = c(unit, time))){
     warning("
@@ -1152,6 +1164,9 @@ distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcome
     fmla_str = glue(".[outcomes] ~ {leads_lags_str} | {fe_str}")
   }
   
+  log_info("Outcomes:")
+  print(outcomes)
+  log_info("Exposure: {exposure}")
   log_info("Formula:")
   print(fmla_str)
   
@@ -1194,6 +1209,7 @@ distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcome
         fmla_str = glue("{outcome} ~ {leads_lags_str} | {fe_str}")
       }
       
+      log_info("Outcome: {outcome}")
       log_info("Formula:")
       print(fmla_str)
       
