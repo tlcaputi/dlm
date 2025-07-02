@@ -1164,6 +1164,11 @@ distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcome
     fmla_str = glue(".[outcomes] ~ {leads_lags_str} | {fe_str}")
   }
   
+
+  # Only keep outcomes that are not all NA/NULL
+  outcomes = outcomes[outcomes %in% names(tmp)]
+  outcomes = outcomes[sapply(outcomes, function(x) !all(is.na(tmp[[x]])))]
+
   log_info("Outcomes:")
   print(outcomes)
   log_info("Exposure: {exposure}")
