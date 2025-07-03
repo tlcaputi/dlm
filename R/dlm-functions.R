@@ -1058,6 +1058,8 @@ distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcome
   try({
     exposure_data = exposure_data %>% select(!!sym(unit), !!sym(time), !!sym(exposure)) %>% unique()
   })
+
+  data = data %>% select(any_of(c(unit, time, outcomes, exposure, covariates, addl_fes, weights)))
   
 
   log_info("========== RUNNING DISTRIBUTED LAGS MODELS ===========")
