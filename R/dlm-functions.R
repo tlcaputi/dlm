@@ -1025,6 +1025,24 @@ distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcome
   # if outcomes is a string, make it a vector of that string
   outcomes = c(outcomes)
   
+
+  # Check for no valid outcomes
+  log_info("All outcomes:")
+  print(outcomes)
+
+  # Only keep outcomes that are not all NA/NULL
+  outcomes = outcomes[outcomes %in% names(data)]
+  outcomes = outcomes[sapply(outcomes, function(x) !all(is.na(data[[x]])))]
+
+  log_info("Outcomes:")
+  print(outcomes)
+
+  if(length(outcomes) == 0){
+    log_error("No outcomes were specified or all outcomes are NA")
+    return(NULL)
+  }
+
+
   for(v in c(unit, time, outcomes, covariates, addl_fes)){
     if(!v %in% names(data)){
       warning(glue("Variable {v} not found in outcome data"))
@@ -1165,14 +1183,7 @@ distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcome
   } else {
     fmla_str = glue(".[outcomes] ~ {leads_lags_str} | {fe_str}")
   }
-  
 
-  # Only keep outcomes that are not all NA/NULL
-  outcomes = outcomes[outcomes %in% names(tmp)]
-  outcomes = outcomes[sapply(outcomes, function(x) !all(is.na(tmp[[x]])))]
-
-  log_info("Outcomes:")
-  print(outcomes)
   log_info("Exposure: {exposure}")
   log_info("Formula:")
   print(fmla_str)
