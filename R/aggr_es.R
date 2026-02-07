@@ -1,6 +1,8 @@
 #' @title Aggregates event-study treatment effects.
 #'
-#' @description Aggregates post- (and/or pre-) treatment effects of an
+#' @description Adapted from Grant McDermott's ggiplot package.
+#'
+#' Aggregates post- (and/or pre-) treatment effects of an
 #' "event-study" estimation, also known as a dynamic difference-in-differences
 #' (DDiD) model. The event-study should have been estimated using the `fixest`
 #' package, which provides a specialised `i()` operator for this class

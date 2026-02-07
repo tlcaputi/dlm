@@ -1,6 +1,8 @@
 #' @title ggplots confidence intervals and point estimates
 #'
-#' @description Plots the `ggplot2` equivalent of `fixest::iplot()`. Many of the
+#' @description Adapted from Grant McDermott's ggiplot package.
+#'
+#' Plots the `ggplot2` equivalent of `fixest::iplot()`. Many of the
 #'   arguments are the same. As per the latter's description:
 #'   This function plots the results of estimations (coefficients and confidence
 #'   intervals). The function restricts the output to variables created with
@@ -52,7 +54,6 @@
 #'   more difficult to achieve using the base `iplot()` alternative.
 #' @seealso [fixest::iplot()].
 #' @return A ggplot2 object.
-#' @import ggplot2
 #' @export
 #' @examples
 #' # We'll also load fixest to estimate the actual models that we're plottig.

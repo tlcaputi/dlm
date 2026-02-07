@@ -1,6 +1,8 @@
 #' @title Internal function for grabbing and preparing iplot data
 #'
-#' @description Grabs the underlying data used to construct `fixest::iplot`,
+#' @description Adapted from Grant McDermott's ggiplot package.
+#'
+#' Grabs the underlying data used to construct `fixest::iplot`,
 #' with some added functionality and tweaks for the `ggiplot` equivalents.
 #' @param object A model object of class `fixest` or `fixest_multi`, where
 #' the `i()` operator has been used to construct an interaction, or set of
@@ -29,7 +31,6 @@
 #' @return A data frame consisting of estimate values, confidence intervals,
 #' relative x-axis positions, and other aesthetic information needed to draw
 #' a ggplot2 object.
-#' @import ggplot2
 #' @export
 #' @examples
 #' library(fixest)

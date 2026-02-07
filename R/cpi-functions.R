@@ -10,16 +10,18 @@
 #' @export
 #' 
 inflation_adjust = function(df, old_price_var, new_price_var, year_var = "year", to_year = 2010){
-  data(cpi)
+  cpi_env <- new.env(parent = emptyenv())
+  utils::data("cpi", package = "dlm", envir = cpi_env)
+  cpi <- cpi_env$cpi
   baseline_val = cpi$cpi[cpi$year == to_year]
-  cpi = cpi %>% 
+  cpi = cpi %>%
       mutate(adjustment_factor = cpi / baseline_val) %>%
       select(
-          "{year_var}" := year, 
+          "{year_var}" := year,
           adjustment_factor
       ) %>%
       unique()
-  df = setDT(df); cpi = setDT(cpi)
+  df = data.table::setDT(df); cpi = data.table::setDT(cpi)
   df = merge(df, cpi, by = year_var, all.x = T)
   df = as.data.frame(df)
   df = df %>% 

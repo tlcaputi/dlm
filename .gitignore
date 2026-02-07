@@ -1,4 +1,9 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
-notebook*
 .Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.DS_Store
+notebook*
+inst/doc
