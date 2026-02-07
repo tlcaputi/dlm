@@ -17,22 +17,17 @@ revcumsum <- function(x){
 #' @export
 #' 
 secumsum <- function(cov) {
-    L <- dim(as.matrix(cov))[1]
+    cov <- as.matrix(cov)
+    L <- dim(cov)[1]
     if (L == 1) {
         return(c(sqrt(cov)))
     }
-    # result vector with standard errors
-    se <- c()
-    # loop over elements
-    for (i in c(1:L)) {
-        # variance of cumulative sum from 1 to i
-        # w[ax] = a %*% W %*% a', a=[1, ..., 1]
-        # create vector for summation
+    se <- numeric(L)
+    for (i in seq_len(L)) {
         a <- matrix(rep(1, i), nrow = 1)
-        w <- a %*% cov[1:i, 1:i] %*% t(a)
-        se[i] <- sqrt(w)
+        se[i] <- sqrt(a %*% cov[1:i, 1:i, drop = FALSE] %*% t(a))
     }
-    return(se)
+    se
 }
 
 
@@ -46,23 +41,97 @@ secumsum <- function(cov) {
 #' @export
 #' 
 serevcumsum <- function(cov) {
-    L <- dim(as.matrix(cov))[1]
+    cov <- as.matrix(cov)
+    L <- dim(cov)[1]
     if (L == 1) {
         return(c(sqrt(cov)))
     }
-    # result vector with standard errors
-    se <- c()
-    # loop over elements
-    for (i in c(L:1)) {
-        # Variance of cumulative sum from i to L
-        # w[ax] = a %*% W %*% a', a=[1, ..., 1]
+    se <- numeric(L)
+    for (i in seq.int(L, 1)) {
         a <- matrix(rep(1, L - i + 1), nrow = 1)
-        v <- a %*% cov[i:L, i:L] %*% t(a)
-        se[i] <- sqrt(v)
+        se[i] <- sqrt(a %*% cov[i:L, i:L, drop = FALSE] %*% t(a))
     }
-    return(se)
+    se
 }
 
+# ---- Internal helpers (not exported) ----
+
+# Prepare exposure data: filter NAs, deduplicate, check/fix balance
+.prepare_exposure <- function(data, exposure_data, exposure, unit, time) {
+  if (exposure %in% names(data)) {
+    data <- data %>% select(-!!sym(exposure))
+  }
+  data <- data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)))
+  exposure_data <- exposure_data %>%
+    filter(!is.na(!!sym(unit)), !is.na(!!sym(time)), !is.na(!!sym(exposure))) %>%
+    select(!!sym(unit), !!sym(time), !!sym(exposure)) %>%
+    unique()
+
+  if (!plm::is.pbalanced(exposure_data, index = c(unit, time))) {
+    warning("The exposure data is not balanced. Filling missing values with NAs.")
+    min_t <- min(exposure_data[[time]], na.rm = TRUE)
+    max_t <- max(exposure_data[[time]], na.rm = TRUE)
+    exposure_data <- tidyr::complete(
+      exposure_data,
+      !!rlang::sym(unit),
+      !!rlang::sym(time) := min_t:max_t
+    )
+    if (!plm::is.pbalanced(exposure_data, index = c(unit, time))) {
+      stop("The exposure data is still not balanced after filling missing values.")
+    }
+  }
+  list(data = data, exposure_data = exposure_data)
+}
+
+# Create all leads and lags of exposure using data.table::shift (single grouped op)
+.create_leads_lags <- function(exposure_data, exposure, unit, time, from_rt, to_rt) {
+  dt <- data.table::as.data.table(exposure_data)
+  data.table::setorderv(dt, c(unit, time))
+
+  leads <- character(0)
+  lags <- character(0)
+
+  # Leads: from_rt < 0 means abs(from_rt)-1 leads
+  n_leads <- abs(from_rt) - 1
+  if (n_leads > 0) {
+    lead_ns <- n_leads:1
+    leads <- paste0(exposure, "_lead", lead_ns)
+    dt[, (leads) := data.table::shift(get(exposure), n = lead_ns, type = "lead"), by = c(unit)]
+  }
+
+  # Lags: 0 through to_rt
+  lag_ns <- 0:to_rt
+  lags <- paste0(exposure, "_lag", lag_ns)
+  dt[, (lags) := data.table::shift(get(exposure), n = lag_ns, type = "lag"), by = c(unit)]
+
+  list(exposure_data = as.data.frame(dt), leads = leads, lags = lags)
+}
+
+# Convert gamma coefficients to beta (event-study) coefficients
+.gamma_to_beta <- function(gamma, vcov, from_rt, to_rt, ref_period) {
+  num_vars <- abs(from_rt) + to_rt
+  time_to_event <- sort(setdiff(from_rt:to_rt, ref_period))
+
+  if (from_rt == ref_period) {
+    after_periods <- 1:num_vars
+    coefs <- cumsum(gamma[after_periods])
+    ses <- secumsum(as.matrix(vcov)[after_periods, after_periods, drop = FALSE])
+  } else {
+    num_before <- length(time_to_event[time_to_event < ref_period])
+    before_periods <- 1:num_before
+    after_periods <- (num_before + 1):num_vars
+    coefs <- c(
+      -revcumsum(gamma[before_periods]),
+      cumsum(gamma[after_periods])
+    )
+    ses <- c(
+      serevcumsum(vcov[before_periods, before_periods, drop = FALSE]),
+      secumsum(vcov[after_periods, after_periods, drop = FALSE])
+    )
+  }
+
+  data.frame(time_to_event = time_to_event, coef = coefs, se = ses)
+}
 
 
 #' Generate Data
@@ -154,210 +223,78 @@ generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 
 #' @export
 #' 
 distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL){
-  
 
   for(v in c(unit, time, outcome, covariates, addl_fes)){
     if(!v %in% names(data)){
       warning(glue("Variable {v} not found in outcome data"))
     }
   }
-  
   for(v in c(unit, time, exposure)){
     if(!v %in% names(exposure_data)){
-      warning(glue("Variable {v} not found in outcome data"))
+      warning(glue("Variable {v} not found in exposure data"))
     }
   }
-
   if(!(ref_period %in% (from_rt:to_rt))){
     stop("ref_period must be in from_rt:to_rt")
   }
 
-  # Make sure that the outcome data doesn't have the exposure in it, which would cause problems in the merges
-  try({
-    data = data %>% select(-!!sym(exposure))
-  })
+  # Prepare data
+  prep <- .prepare_exposure(data, exposure_data, exposure, unit, time)
+  data <- prep$data
+  exposure_data <- prep$exposure_data
 
-  try({
-    data = data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)))
-  })
-  
-  try({
-    exposure_data = exposure_data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)), !is.na(!!sym(exposure)))
-  })
+  MINTIME <- min(exposure_data[[time]], na.rm = TRUE)
+  MAXTIME <- max(exposure_data[[time]], na.rm = TRUE)
+  logger::log_info("MINTIME: {MINTIME}, MAXTIME: {MAXTIME}")
 
-  try({
-    exposure_data = exposure_data %>% select(!!sym(unit), !!sym(time), !!sym(exposure)) %>% unique()
-  })
+  data_years_included <- (MINTIME + abs(to_rt)):(MAXTIME - abs(from_rt) + 1)
+  data_years_included <- intersect(data_years_included, unique(data[[time]]))
 
-
-  if(!plm::is.pbalanced(exposure_data, index = c(unit, time))){
-    warning("
-
-    ****** WARNING!!!! ******
-    The exposure data is not balanced after taking unique values of unit, time, and exposure.
-    We are going to fill in the missing values with NAs. You should make sure this is okay.
-    
-    ")
-
-    min_time = min(exposure_data[[time]], na.rm = T)
-    max_time = max(exposure_data[[time]], na.rm = T)
-    exposure_data = tidyr::complete(
-      exposure_data,
-      !!rlang::sym(unit),
-      !!rlang::sym(time) := min_time:max_time
-    )
-  
-    if(!plm::is.pbalanced(exposure_data, index = c(unit, time))){
-      stop("The exposure data is still not balanced after taking unique values of unit, time, and exposure.")
-    }
-
-  }
-
-
-
-
-  # Capture the minimum and maximum time
-  MINTIME = min(exposure_data[[time]], na.rm = T)
-  MAXTIME = max(exposure_data[[time]], na.rm = T)
-  logger::log_info("MINTIME: {MINTIME}")
-  logger::log_info("MAXTIME: {MAXTIME}")
-  
-  # This tells us the data years that are included
-  data_years_included = (MINTIME + abs(to_rt)):(MAXTIME - abs(from_rt) + 1)
-  logger::log_info("Data years that could be included, based upon the exposure data")
-  print(data_years_included)
-  data_years_included = intersect(data_years_included, unique(data[[time]]))
-  logger::log_info("Data years that actually are included, based upon the exposure and outcome data")
-  print(data_years_included)
-  
-  # Create lag and lead variables in the distance data
-  ## TODO: we only really need to create these once, not every time. Not sure how much time that saves.
+  # Create leads/lags efficiently
   logger::log_info("Creating leads and lags")
-  leads = c()
-
-  if(abs(from_rt) > 1){
-    for(i in (abs(from_rt) - 1):1){
-      exposure_data = exposure_data %>% 
-        group_by(!!sym(unit)) %>% 
-        mutate(
-          "{exposure}_lead{i}" := dplyr::lead(!!sym(exposure), i)
-        )
-      leads = c(leads, glue("{exposure}_lead{i}"))
-    }
-  } 
-  leads_str = paste0(leads, collapse = " + ")
-  
-  lags = c()
-  for(i in 0:to_rt){
-    exposure_data = exposure_data %>% 
-      group_by(!!sym(unit)) %>% 
-      mutate(
-        "{exposure}_lag{i}" := dplyr::lag(!!sym(exposure), i)
-      )
-    lags = c(lags, glue("{exposure}_lag{i}"))
-  }
-  lags_str = paste0(lags, collapse = " + ")
+  ll <- .create_leads_lags(exposure_data, exposure, unit, time, from_rt, to_rt)
+  exposure_data <- ll$exposure_data
+  leads <- ll$leads
+  lags <- ll$lags
   logger::log_info("Done creating leads and lags")
-  
-  
-  # Merge together the data and distance data
-  logger::log_info("2NROW DATA: {nrow(data)}")
-  logger::log_info("2NROW EXPOSURE: {nrow(exposure_data)}")
-  print(data %>% select(unit, time) %>% head())
-  print(exposure_data %>% select(unit, time) %>% head())
-  print(names(data))
-  print(names(exposure_data))
-  tmp = merge(data, exposure_data, by=c(unit, time), all.x = T)
-  logger::log_info("2NROW TMP: {nrow(tmp)}")
-  
-  # Define unit and time
-  tmp = tmp %>% mutate(unit := !!sym(unit), time := !!sym(time))
-  
-  # Generate the formula
-  leads_lags_str = paste0(c(leads, lags), collapse = " + ")
-  if(!is.null(covariates)){
-    covariate_str = paste0(covariates, collapse = ' + ')
-    fmla_str = glue("{outcome} ~ {leads_lags_str} + {covariate_str} | unit + time")
+
+  # Merge
+  tmp <- merge(data, exposure_data, by = c(unit, time), all.x = TRUE)
+  tmp <- tmp %>% mutate(unit := !!sym(unit), time := !!sym(time))
+
+  # Build formula
+  leads_lags_str <- paste0(c(leads, lags), collapse = " + ")
+  fes <- c("unit", "time", addl_fes)
+  fe_str <- paste0(fes, collapse = " + ")
+  if (!is.null(covariates)) {
+    fmla_str <- glue("{outcome} ~ {leads_lags_str} + {paste0(covariates, collapse = ' + ')} | {fe_str}")
   } else {
-    fmla_str = glue("{outcome} ~ {leads_lags_str} | unit + time")
+    fmla_str <- glue("{outcome} ~ {leads_lags_str} | {fe_str}")
   }
-  if(!is.null(addl_fes)){
-    addl_fe_str = paste0(addl_fes, collapse = ' + ')
-    fmla_str = glue("{fmla_str} + {addl_fe_str}")
-  }
-  
-  logger::log_info("Formula:")
-  print(fmla_str)
-  
-  # Estimate model with arguments
-  fmla = stats::as.formula(fmla_str)
-  if(!is.null(weights)){
-    wt_fmla = stats::as.formula(paste0("~", weights))
-    model = fixest::feols(fmla, data = tmp, cluster = ~unit, fixef.rm = 'none', weights = wt_fmla)
+  logger::log_info("Formula: {fmla_str}")
+
+  # Estimate
+  fmla <- stats::as.formula(fmla_str)
+  if (!is.null(weights)) {
+    wt_fmla <- stats::as.formula(paste0("~", weights))
+    model <- fixest::feols(fmla, data = tmp, cluster = ~unit, fixef.rm = 'none', weights = wt_fmla)
   } else {
-    model = fixest::feols(fmla, data = tmp, cluster = ~unit, fixef.rm = 'none')
+    model <- fixest::feols(fmla, data = tmp, cluster = ~unit, fixef.rm = 'none')
   }
 
-  logger::log_info("Coefficients:")
-  num_vars = abs(from_rt)+to_rt
-  coefficients = model$coefficients
-  if(length(coefficients) != (length(lags) + length(leads) + length(covariates))){
+  num_vars <- abs(from_rt) + to_rt
+  coefficients <- model$coefficients
+  if (length(coefficients) != (length(lags) + length(leads) + length(covariates))) {
     logger::log_info("Not all coefficients were estimated")
     print(coefficients)
     stop("Not all coefficients were estimated")
   }
-  print(model$coefficients[1:num_vars])
 
-  # Extract coefficients and regressions from the model
-  gamma = model$coefficients[1:num_vars]
+  gamma <- model$coefficients[1:num_vars]
+  vcov <- stats::vcov(model, cluster = ~unit)[1:num_vars, 1:num_vars]
 
-  logger::log_info("Estimating vcov")
-  vcov = stats::vcov(model, cluster= ~unit)[1:num_vars, 1:num_vars]
-  logger::log_info("Done estimating vcov")
-
-  # Sum them up to the reference period
-  if(from_rt == ref_period){
-
-    time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
-    after_periods = 1:num_vars
-    # logger::log_info("After periods:")
-    # print(after_periods)
-    # logger::log_info("vcov")
-    # print(vcov)
-
-    coefs = c(
-      cumsum(gamma[after_periods])
-    )
-    ses = c(
-      secumsum(as.matrix(vcov)[after_periods, after_periods])
-    )
-    betas = data.frame(
-      time_to_event = time_to_event,
-      coef = coefs,
-      se = ses
-    )
-    
-  } else if(from_rt < ref_period) {
-
-    time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
-    num_before_periods = length(time_to_event[time_to_event < ref_period])
-    before_periods = 1:num_before_periods
-    after_periods = (num_before_periods + 1):num_vars
-    
-    coefs = c(
-      -revcumsum(gamma[before_periods]),
-      cumsum(gamma[after_periods])
-    )
-    ses = c(
-      serevcumsum(vcov[before_periods, before_periods]),
-      secumsum(vcov[after_periods, after_periods])
-    )
-    betas = data.frame(
-      time_to_event = time_to_event,
-      coef = coefs,
-      se = ses
-    )
-  }
+  # Transform gamma -> beta
+  betas <- .gamma_to_beta(gamma, vcov, from_rt, to_rt, ref_period)
   
 
   outcome_name = "Coefficient"
@@ -672,119 +609,40 @@ add_caption_to_plot = function(p, caption_addition, sep="\n"){
 #' @export
 #' 
 distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols", plot_type = "ribbon"){
-  
-  # if outcomes is a string, make it a vector of that string
-  outcomes = c(outcomes)
 
-  for(v in c(unit, time, outcomes, covariates, addl_fes)){
-    if(!v %in% names(data)){
-      warning(glue("Variable {v} not found in outcome data"))
-    }
+  outcomes <- c(outcomes)
+
+  for (v in c(unit, time, outcomes, covariates, addl_fes)) {
+    if (!v %in% names(data)) warning(glue("Variable {v} not found in outcome data"))
   }
-  
-  for(v in c(unit, time, exposure)){
-    if(!v %in% names(exposure_data)){
-      warning(glue("Variable {v} not found in outcome data"))
-    }
+  for (v in c(unit, time, exposure)) {
+    if (!v %in% names(exposure_data)) warning(glue("Variable {v} not found in exposure data"))
   }
+  if (!(ref_period %in% (from_rt:to_rt))) stop("ref_period must be in from_rt:to_rt")
 
-  if(!(ref_period %in% (from_rt:to_rt))){
-    stop("ref_period must be in from_rt:to_rt")
-  }
+  # Prepare data
+  prep <- .prepare_exposure(data, exposure_data, exposure, unit, time)
+  data <- prep$data
+  exposure_data <- prep$exposure_data
 
-  
-  # Make sure that the outcome data doesn't have the exposure in it, which would cause problems in the merges
-  try({
-    data = data %>% select(-!!sym(exposure))
-  })
+  MINTIME <- min(exposure_data[[time]], na.rm = TRUE)
+  MAXTIME <- max(exposure_data[[time]], na.rm = TRUE)
+  logger::log_info("MINTIME: {MINTIME}, MAXTIME: {MAXTIME}")
 
-  try({
-    data = data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)))
-  })
-  
-  try({
-    exposure_data = exposure_data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)), !is.na(!!sym(exposure)))
-  })
+  data_years_included <- (MINTIME + abs(to_rt)):(MAXTIME - abs(from_rt) + 1)
+  data_years_included <- intersect(data_years_included, unique(data[[time]]))
 
-  try({
-    exposure_data = exposure_data %>% select(!!sym(unit), !!sym(time), !!sym(exposure)) %>% unique()
-  })
-
-
-  if(!plm::is.pbalanced(exposure_data, index = c(unit, time))){
-    warning("
-
-    ****** WARNING!!!! ******
-    The exposure data is not balanced after taking unique values of unit, time, and exposure.
-    We are going to fill in the missing values with NAs. You should make sure this is okay.
-    
-    ")
-
-    min_time = min(exposure_data[[time]], na.rm = T)
-    max_time = max(exposure_data[[time]], na.rm = T)
-    exposure_data = tidyr::complete(
-      exposure_data,
-      !!rlang::sym(unit),
-      !!rlang::sym(time) := min_time:max_time
-    )
-  
-    if(!plm::is.pbalanced(exposure_data, index = c(unit, time))){
-      stop("The exposure data is still not balanced after taking unique values of unit, time, and exposure.")
-    }
-
-  }
-
-
-
-  # Capture the minimum and maximum time
-  MINTIME = min(exposure_data[[time]], na.rm = T)
-  MAXTIME = max(exposure_data[[time]], na.rm = T)
-  logger::log_info("MINTIME: {MINTIME}")
-  logger::log_info("MAXTIME: {MAXTIME}")
-  
-  # This tells us the data years that are included
-  data_years_included = (MINTIME + abs(to_rt)):(MAXTIME - abs(from_rt) + 1)
-  logger::log_info("Data years that could be included, based upon the exposure data")
-  print(data_years_included)
-  data_years_included = intersect(data_years_included, unique(data[[time]]))
-  logger::log_info("Data years that actually are included, based upon the exposure and outcome data")
-  print(data_years_included)
-  
-  # Create lag and lead variables in the distance data
-  ## TODO: we only really need to create these once, not every time. Not sure how much time that saves.
+  # Create leads/lags efficiently (once for all outcomes)
   logger::log_info("Creating leads and lags")
-  leads = c()
-
-  if(abs(from_rt) > 1){
-    for(i in (abs(from_rt) - 1):1){
-      exposure_data = exposure_data %>% 
-        group_by(!!sym(unit)) %>% 
-        mutate(
-          "{exposure}_lead{i}" := dplyr::lead(!!sym(exposure), i)
-        )
-      leads = c(leads, glue("{exposure}_lead{i}"))
-    }
-  } 
-  leads_str = paste0(leads, collapse = " + ")
-  
-  lags = c()
-  for(i in 0:to_rt){
-    exposure_data = exposure_data %>% 
-      group_by(!!sym(unit)) %>% 
-      mutate(
-        "{exposure}_lag{i}" := dplyr::lag(!!sym(exposure), i)
-      )
-    lags = c(lags, glue("{exposure}_lag{i}"))
-  }
-  lags_str = paste0(lags, collapse = " + ")
+  ll <- .create_leads_lags(exposure_data, exposure, unit, time, from_rt, to_rt)
+  exposure_data <- ll$exposure_data
+  leads <- ll$leads
+  lags <- ll$lags
   logger::log_info("Done creating leads and lags")
 
-  # Merge together the data and distance data
-  # data = setDT(data); exposure_data = setDT(exposure_data)
-  tmp = merge(data, exposure_data, by=c(unit, time), all.x = T)
-  
-  # Define unit and time
-  tmp = tmp %>% mutate(unit := !!sym(unit), time := !!sym(time))
+  # Merge (once for all outcomes)
+  tmp <- merge(data, exposure_data, by = c(unit, time), all.x = TRUE)
+  tmp <- tmp %>% mutate(unit := !!sym(unit), time := !!sym(time))
 
 
   .list = lapply(outcomes, function(outcome){
@@ -820,73 +678,23 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     cmd = glue("fixest::{model_type}({fmla_str}, {paste0(arguments, collapse = ', ')})")
     model = eval(parse(text=cmd))
     
-    logger::log_info("Coefficients:")
-    num_vars = abs(from_rt)+to_rt
-    coefficients = model$coefficients
-    if(length(coefficients) != (length(lags) + length(leads) + length(covariates))){
+    num_vars <- abs(from_rt) + to_rt
+    coefficients <- model$coefficients
+    if (length(coefficients) != (length(lags) + length(leads) + length(covariates))) {
       logger::log_info("Not all coefficients were estimated")
-      print(coefficients)
       stop("Not all coefficients were estimated")
     }
-    print(model$coefficients[1:num_vars])
-    nobs_model = nobs(model)
+    nobs_model <- nobs(model)
     logger::log_info("DLM Model has N = {comma(nobs_model)}")
-    # Extract coefficients and regressions from the model
-    gamma = model$coefficients[1:num_vars]
 
-    logger::log_info("Estimating vcov")
-    vcov = vcov(model, cluster= ~unit)[1:num_vars, 1:num_vars]
-    logger::log_info("Done estimating vcov")
+    gamma <- model$coefficients[1:num_vars]
+    vcov <- vcov(model, cluster = ~unit)[1:num_vars, 1:num_vars]
 
-    
-    # Sum them up to the reference period
+    # Transform gamma -> beta
+    betas <- .gamma_to_beta(gamma, vcov, from_rt, to_rt, ref_period)
 
-    if(from_rt == ref_period){
-
-      time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
-      after_periods = 1:num_vars
-      logger::log_info("After periods:")
-      print(after_periods)
-      logger::log_info("vcov")
-      print(vcov)
-
-      coefs = c(
-        cumsum(gamma[after_periods])
-      )
-      ses = c(
-        secumsum(as.matrix(vcov)[after_periods, after_periods])
-      )
-      betas = data.frame(
-        time_to_event = time_to_event,
-        coef = coefs,
-        se = ses
-      )
-      
-    } else if(from_rt < ref_period) {
-
-      time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
-      num_before_periods = length(time_to_event[time_to_event < ref_period])
-      before_periods = 1:num_before_periods
-      after_periods = (num_before_periods + 1):num_vars
-      
-      coefs = c(
-        -revcumsum(gamma[before_periods]),
-        cumsum(gamma[after_periods])
-      )
-      ses = c(
-        serevcumsum(vcov[before_periods, before_periods]),
-        secumsum(vcov[after_periods, after_periods])
-      )
-      betas = data.frame(
-        time_to_event = time_to_event,
-        coef = coefs,
-        se = ses
-      )
-    }
-    
-
-    outcome_name = "Coefficient"
-    exposure_name = "Time to Unit Change"
+    outcome_name <- "Coefficient"
+    exposure_name <- "Time to Unit Change"
     if(!is.null(dict)){
       if(outcome %in% names(dict)){
         outcome_name = dict[outcome]
@@ -1027,151 +835,54 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
 #' @export
 #' 
 distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols", plot_type = "ribbon"){
-  
-  # if outcomes is a string, make it a vector of that string
-  outcomes = c(outcomes)
-  
 
-  # Check for no valid outcomes
-  logger::log_info("All outcomes:")
-  print(outcomes)
+  outcomes <- c(outcomes)
 
-  # Only keep outcomes that are not all NA/NULL
-  outcomes = outcomes[outcomes %in% names(data)]
-  outcomes = outcomes[sapply(outcomes, function(x) !all(is.na(data[[x]])))]
-
-  logger::log_info("Outcomes:")
-  print(outcomes)
-
-  if(length(outcomes) == 0){
+  # Filter to valid outcomes
+  outcomes <- outcomes[outcomes %in% names(data)]
+  outcomes <- outcomes[sapply(outcomes, function(x) !all(is.na(data[[x]])))]
+  if (length(outcomes) == 0) {
     logger::log_error("No outcomes were specified or all outcomes are NA")
     return(NULL)
   }
 
+  for (v in c(unit, time, outcomes, covariates, addl_fes)) {
+    if (!v %in% names(data)) warning(glue("Variable {v} not found in outcome data"))
+  }
+  for (v in c(unit, time, exposure)) {
+    if (!v %in% names(exposure_data)) warning(glue("Variable {v} not found in exposure data"))
+  }
+  if (!(ref_period %in% (from_rt:to_rt))) stop("ref_period must be in from_rt:to_rt")
 
-  for(v in c(unit, time, outcomes, covariates, addl_fes)){
-    if(!v %in% names(data)){
-      warning(glue("Variable {v} not found in outcome data"))
-    }
-  }
-  
-  for(v in c(unit, time, exposure)){
-    if(!v %in% names(exposure_data)){
-      warning(glue("Variable {v} not found in outcome data"))
-    }
-  }
-  
-  if(!(ref_period %in% (from_rt:to_rt))){
-    stop("ref_period must be in from_rt:to_rt")
-  }
-  
-  
-  # Make sure that the outcome data doesn't have the exposure in it, which would cause problems in the merges
-  try({
-    data = data %>% select(-!!sym(exposure))
-  })
-  
-  try({
-    data = data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)))
-  })
-  
-  try({
-    exposure_data = exposure_data %>% filter(!is.na(!!sym(unit)), !is.na(!!sym(time)), !is.na(!!sym(exposure)))
-  })
-  
-  try({
-    exposure_data = exposure_data %>% select(!!sym(unit), !!sym(time), !!sym(exposure)) %>% unique()
-  })
-
-  data = data %>% select(any_of(c(unit, time, outcomes, exposure, covariates, addl_fes, weights)))
-  
+  # Prepare data
+  prep <- .prepare_exposure(data, exposure_data, exposure, unit, time)
+  data <- prep$data
+  exposure_data <- prep$exposure_data
+  data <- data %>% select(any_of(c(unit, time, outcomes, exposure, covariates, addl_fes, weights)))
 
   logger::log_info("========== RUNNING DISTRIBUTED LAGS MODELS ===========")
-  logger::log_info("Data N: {nrow(data)}")
-  logger::log_info("Exposure Data N: {nrow(exposure_data)}")
-  logger::log_info("From RT: {from_rt}")
-  logger::log_info("To RT: {to_rt}")
+  logger::log_info("Data N: {nrow(data)}, Exposure N: {nrow(exposure_data)}")
+  logger::log_info("from_rt: {from_rt}, to_rt: {to_rt}")
   logger::log_info("Outcomes: {paste(outcomes, collapse = ', ')}")
-  logger::log_info("Exposure: {exposure}")
-  logger::log_info("Unit: {unit}")
-  logger::log_info("Time: {time}")
-  logger::log_info("====================================================")
 
-  
-  if(!plm::is.pbalanced(exposure_data, index = c(unit, time))){
-    warning("
+  MINTIME <- min(exposure_data[[time]], na.rm = TRUE)
+  MAXTIME <- max(exposure_data[[time]], na.rm = TRUE)
+  logger::log_info("MINTIME: {MINTIME}, MAXTIME: {MAXTIME}")
 
-    ****** WARNING!!!! ******
-    The exposure data is not balanced after taking unique values of unit, time, and exposure.
-    We are going to fill in the missing values with NAs. You should make sure this is okay.
-    
-    ")
-    
-    min_time = min(exposure_data[[time]], na.rm = T)
-    max_time = max(exposure_data[[time]], na.rm = T)
-    exposure_data = tidyr::complete(
-      exposure_data,
-      !!rlang::sym(unit),
-      !!rlang::sym(time) := min_time:max_time
-    )
-    
-    if(!plm::is.pbalanced(exposure_data, index = c(unit, time))){
-      stop("The exposure data is still not balanced after taking unique values of unit, time, and exposure.")
-    }
-    
-  }
-  
-  
-  
-  # Capture the minimum and maximum time
-  MINTIME = min(exposure_data[[time]], na.rm = T)
-  MAXTIME = max(exposure_data[[time]], na.rm = T)
-  logger::log_info("MINTIME: {MINTIME}")
-  logger::log_info("MAXTIME: {MAXTIME}")
-  
-  # This tells us the data years that are included
-  data_years_included = (MINTIME + abs(to_rt)):(MAXTIME - abs(from_rt) + 1)
-  logger::log_info("Data years that could be included, based upon the exposure data")
-  print(data_years_included)
-  data_years_included = intersect(data_years_included, unique(data[[time]]))
-  logger::log_info("Data years that actually are included, based upon the exposure and outcome data")
-  print(data_years_included)
-  
-  # Create lag and lead variables in the distance data
-  ## TODO: we only really need to create these once, not every time. Not sure how much time that saves.
+  data_years_included <- (MINTIME + abs(to_rt)):(MAXTIME - abs(from_rt) + 1)
+  data_years_included <- intersect(data_years_included, unique(data[[time]]))
+
+  # Create leads/lags efficiently (once for all outcomes)
   logger::log_info("Creating leads and lags")
-  leads = c()
-  
-  if(abs(from_rt) > 1){
-    for(i in (abs(from_rt) - 1):1){
-      exposure_data = exposure_data %>% 
-        group_by(!!sym(unit)) %>% 
-        mutate(
-          "{exposure}_lead{i}" := dplyr::lead(!!sym(exposure), i)
-        )
-      leads = c(leads, glue("{exposure}_lead{i}"))
-    }
-  } 
-  leads_str = paste0(leads, collapse = " + ")
-  
-  lags = c()
-  for(i in 0:to_rt){
-    exposure_data = exposure_data %>% 
-      group_by(!!sym(unit)) %>% 
-      mutate(
-        "{exposure}_lag{i}" := dplyr::lag(!!sym(exposure), i)
-      )
-    lags = c(lags, glue("{exposure}_lag{i}"))
-  }
-  lags_str = paste0(lags, collapse = " + ")
+  ll <- .create_leads_lags(exposure_data, exposure, unit, time, from_rt, to_rt)
+  exposure_data <- ll$exposure_data
+  leads <- ll$leads
+  lags <- ll$lags
   logger::log_info("Done creating leads and lags")
-  
-  # Merge together the data and distance data
-  # data = setDT(data); exposure_data = setDT(exposure_data)
-  tmp = merge(data, exposure_data, by=c(unit, time), all.x = T)
-  
-  # Define unit and time
-  tmp = tmp %>% mutate(unit := !!sym(unit), time := !!sym(time))
+
+  # Merge (once for all outcomes)
+  tmp <- merge(data, exposure_data, by = c(unit, time), all.x = TRUE)
+  tmp <- tmp %>% mutate(unit := !!sym(unit), time := !!sym(time))
   
   
   
@@ -1245,65 +956,20 @@ distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcome
       cmd = glue("fixest::{model_type}({fmla_str}, {paste0(arguments, collapse = ', ')})")
       # model = eval(parse(text=cmd))
       
-      logger::log_info("Coefficients:")
-      num_vars = abs(from_rt)+to_rt
-      coefficients = model$coefficients
-      if(length(coefficients) != (length(lags) + length(leads) + length(covariates))){
+      num_vars <- abs(from_rt) + to_rt
+      coefficients <- model$coefficients
+      if (length(coefficients) != (length(lags) + length(leads) + length(covariates))) {
         logger::log_info("Not all coefficients were estimated")
-        print(coefficients)
         stop("Not all coefficients were estimated")
       }
-      print(model$coefficients[1:num_vars])
-      nobs_model = nobs(model)
+      nobs_model <- nobs(model)
       logger::log_info("DLM Model has N = {comma(nobs_model)}")
-      # Extract coefficients and regressions from the model
-      gamma = model$coefficients[1:num_vars]
-      vcov = vcov(model, cluster= ~unit)[1:num_vars, 1:num_vars]
-      
-      # Sum them up to the reference period
-      
-      if(from_rt == ref_period){
-        
-        time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
-        after_periods = 1:num_vars
-        logger::log_info("After periods:")
-        print(after_periods)
-        logger::log_info("vcov")
-        print(vcov)
-        
-        coefs = c(
-          cumsum(gamma[after_periods])
-        )
-        ses = c(
-          secumsum(as.matrix(vcov)[after_periods, after_periods])
-        )
-        betas = data.frame(
-          time_to_event = time_to_event,
-          coef = coefs,
-          se = ses
-        )
-        
-      } else if(from_rt < ref_period) {
-        
-        time_to_event = sort(setdiff(from_rt:to_rt, c(ref_period)))
-        num_before_periods = length(time_to_event[time_to_event < ref_period])
-        before_periods = 1:num_before_periods
-        after_periods = (num_before_periods + 1):num_vars
-        
-        coefs = c(
-          -revcumsum(gamma[before_periods]),
-          cumsum(gamma[after_periods])
-        )
-        ses = c(
-          serevcumsum(vcov[before_periods, before_periods]),
-          secumsum(vcov[after_periods, after_periods])
-        )
-        betas = data.frame(
-          time_to_event = time_to_event,
-          coef = coefs,
-          se = ses
-        )
-      }
+
+      gamma <- model$coefficients[1:num_vars]
+      vcov <- vcov(model, cluster = ~unit)[1:num_vars, 1:num_vars]
+
+      # Transform gamma -> beta
+      betas <- .gamma_to_beta(gamma, vcov, from_rt, to_rt, ref_period)
       
       
       outcome_name = "Coefficient"

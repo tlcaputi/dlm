@@ -6,6 +6,8 @@
 #' @importFrom glue glue
 #' @importFrom scales comma
 #' @importFrom stats as.formula vcov confint nobs rnorm formula
+#' @importFrom data.table as.data.table setorderv shift
+.datatable.aware = TRUE
 #' @importFrom utils head tail
 #' @importFrom ggplot2 ggplot aes geom_line geom_point geom_errorbar geom_ribbon
 #'   geom_hline geom_vline geom_linerange labs theme_bw theme_linedraw theme
