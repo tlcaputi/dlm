@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background rounded rectangle -->
+  <rect x="16" y="16" width="168" height="168" rx="24" ry="24"
+        fill="white" stroke="#2c3e50" stroke-width="6"/>
+
+  <!-- Event-study line: flat pre-period, then drop at treatment -->
+  <polyline points="44,72 72,72 100,72 108,118 136,118 164,118"
+            fill="none" stroke="#2980b9" stroke-width="5.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Subtle dashed vertical line at treatment onset -->
+  <line x1="100" y1="56" x2="100" y2="132"
+        stroke="#bdc3c7" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <!-- DLM text -->
+  <text x="100" y="162" text-anchor="middle"
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-weight="700" font-size="42" fill="#2c3e50"
+        letter-spacing="3">DLM</text>
+</svg>
