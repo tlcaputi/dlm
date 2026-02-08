@@ -593,12 +593,15 @@ add_caption_to_plot = function(p, caption_addition, sep="\n"){
 
 #' Distributed Lags Models
 #'
-#' This is the distributed lags model / continuous event study. It allows for multiple outcomes.
+#' Estimates distributed lag models for one or more outcomes. Uses fixest's
+#' multi-LHS syntax to estimate all outcomes in a single call, sharing the
+#' fixed-effect demeaning across outcomes for efficiency.
+#'
 #' @param data A data frame containing the unit, time, outcome, covariates, and any additional fixed effects
 #' @param exposure_data A data frame containing the unit, time, and exposure variables
 #' @param from_rt The starting lag period.
 #' @param to_rt The ending lag period.
-#' @param outcome The outcome variable.
+#' @param outcomes Vector of outcome variable names.
 #' @param exposure The exposure variable.
 #' @param unit The unit identifier.
 #' @param time The time variable.
@@ -618,232 +621,6 @@ add_caption_to_plot = function(p, caption_addition, sep="\n"){
 #' @export
 #'
 distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols", plot_type = "ribbon", verbose = FALSE){
-
-  outcomes <- c(outcomes)
-
-  for (v in c(unit, time, outcomes, covariates, addl_fes)) {
-    if (!v %in% names(data)) warning(glue("Variable {v} not found in outcome data"))
-  }
-  for (v in c(unit, time, exposure)) {
-    if (!v %in% names(exposure_data)) warning(glue("Variable {v} not found in exposure data"))
-  }
-  if (!(ref_period %in% (from_rt:to_rt))) stop("ref_period must be in from_rt:to_rt")
-
-  # Prepare data
-  prep <- .prepare_exposure(data, exposure_data, exposure, unit, time)
-  data <- prep$data
-  exposure_data <- prep$exposure_data
-
-  MINTIME <- min(exposure_data[[time]], na.rm = TRUE)
-  MAXTIME <- max(exposure_data[[time]], na.rm = TRUE)
-
-  data_periods_included <- (MINTIME + abs(to_rt)):(MAXTIME - abs(from_rt) + 1)
-  data_periods_included <- intersect(data_periods_included, unique(data[[time]]))
-
-  logger::log_info("DLM: {length(outcomes)} outcome(s), exposure = {exposure}, periods {from_rt} to {to_rt} (ref = {ref_period})")
-  logger::log_info("DLM: unit = {unit}, time = {time}, {length(data_periods_included)} periods included ({MINTIME} to {MAXTIME})")
-  if (verbose) {
-    logger::log_info("DLM: Data N = {scales::comma(nrow(data))}, Exposure N = {scales::comma(nrow(exposure_data))}")
-    logger::log_info("DLM: Outcomes: {paste(outcomes, collapse = ', ')}")
-  }
-
-  # Create leads/lags efficiently (once for all outcomes)
-  if (verbose) logger::log_info("DLM: Creating leads and lags...")
-  ll <- .create_leads_lags(exposure_data, exposure, unit, time, from_rt, to_rt)
-  exposure_data <- ll$exposure_data
-  leads <- ll$leads
-  lags <- ll$lags
-  if (verbose) logger::log_info("DLM: Done creating leads and lags")
-
-  # Merge (once for all outcomes)
-  tmp <- merge(data, exposure_data, by = c(unit, time), all.x = TRUE)
-  tmp <- tmp %>% mutate(unit := !!sym(unit), time := !!sym(time))
-
-
-  .list = lapply(outcomes, function(outcome){
-
-    res = tryCatch({
-
-    # Generate the formula
-
-    if(remove_unit_FE){
-      fes = c("time", addl_fes)
-    } else {
-      fes = c("unit", "time", addl_fes)
-    }
-    fe_str = paste0(fes, collapse = ' + ')
-
-    leads_lags_str = paste0(c(leads, lags), collapse = " + ")
-    if(!is.null(covariates)){
-      covariate_str = paste0(covariates, collapse = ' + ')
-      fmla_str = glue("{outcome} ~ {leads_lags_str} + {covariate_str} | {fe_str}")
-    } else {
-      fmla_str = glue("{outcome} ~ {leads_lags_str} | {fe_str}")
-    }
-
-    if (verbose) logger::log_info("DLM: Formula: {fmla_str}")
-
-    # Estimate model with arguments
-    arguments = c("data = tmp", "cluster = ~unit", "fixef.rm = 'none'", addl_arguments)
-    if(!is.null(weights)){
-      arguments = c(arguments, glue("weights = ~{weights}"))
-    }
-    cmd = glue("fixest::{model_type}({fmla_str}, {paste0(arguments, collapse = ', ')})")
-    model = eval(parse(text=cmd))
-
-    num_vars <- abs(from_rt) + to_rt
-    coefficients <- model$coefficients
-    if (length(coefficients) != (length(lags) + length(leads) + length(covariates))) {
-      logger::log_warn("DLM: Not all coefficients estimated for {outcome}")
-      stop("Not all coefficients were estimated")
-    }
-    nobs_model <- nobs(model)
-    logger::log_info("DLM: {outcome}: N = {scales::comma(nobs_model)}")
-
-    gamma <- model$coefficients[1:num_vars]
-    vcov <- vcov(model, cluster = ~unit)[1:num_vars, 1:num_vars]
-
-    # Transform gamma -> beta
-    betas <- .gamma_to_beta(gamma, vcov, from_rt, to_rt, ref_period)
-
-    outcome_name <- "Coefficient"
-    exposure_name <- "Time to Unit Change"
-    if(!is.null(dict)){
-      if(outcome %in% names(dict)){
-        outcome_name = dict[outcome]
-      }
-      if(exposure %in% names(dict)){
-        exposure_name = glue("Time to Unit Change in {dict[exposure]}")
-      }
-    }
-
-    # This just creates a plot (adding in reference period)
-    plotdf = rbind.data.frame(betas, data.frame(time_to_event = ref_period, coef = 0, se = 0))
-    plotdf = plotdf %>% mutate(
-      time_to_event_str = case_when(
-        time_to_event == from_rt ~ glue("{from_rt}+"),
-        time_to_event == to_rt ~ glue("{to_rt}+"),
-        T ~ as.character(time_to_event)
-      )
-    )
-    plotdf = plotdf %>% arrange(time_to_event)
-    p = ggplot(plotdf, aes(x = time_to_event, y = coef))
-    if(tolower(plot_type) == "ribbon"){
-      p = p +
-      geom_ribbon(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se), fill = "lightgrey", alpha = 0.6) +
-      geom_line(aes(y = coef), color = "darkblue") +
-      geom_point(aes(y = coef), color = "darkblue")
-    } else {
-      p = p + geom_line(color = "darkblue")
-      p = p + geom_point(color = "darkblue")
-      p = p + geom_errorbar(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), width = 0.2, color = "darkblue")
-    }
-    p = p + geom_hline(yintercept = 0, linetype = "dashed")
-    p = p + geom_vline(xintercept = ref_period+0.5, linetype = "dashed")
-    min_included_period = min(data_periods_included, na.rm = T)
-    max_included_period = max(data_periods_included, na.rm = T)
-    cap = glue("N={comma(nobs_model)} | From {min_included_period} To {max_included_period} | {Sys.time()}")
-    if (verbose) logger::log_info("DLM: Caption: {cap}")
-    p = p + labs(x = exposure_name, y = outcome_name, caption = cap)
-    p = p + theme_bw()
-
-    if(dd){
-      out = twfe_companion(
-        data = data,
-        exposure_data = exposure_data,
-        from_rt = from_rt,
-        to_rt = to_rt,
-        outcome = outcome,
-        exposure = exposure,
-        unit = unit,
-        time = time,
-        covariates = covariates,
-        addl_fes = addl_fes,
-        ref_period = ref_period,
-        weights = weights,
-        dd = dd,
-        n = n
-      )
-      p = add_caption_to_plot(p, out)
-      if (verbose) logger::log_info("DLM: DD caption: {out}")
-    }
-
-    list(
-      "betas" = betas,
-      "plot" = p,
-      "model" = model,
-      "vcov" = vcov,
-      "data_periods_included" = data_periods_included,
-      "fmla_str" = fmla_str,
-      "from_rt" = from_rt,
-      "to_rt" = to_rt,
-      "cmd" = cmd,
-      "exposure" = exposure,
-      "outcome" = outcome
-    )
-
-
-    },
-    error = function(cond){
-      logger::log_error("DLM: Failed for {outcome}: {conditionMessage(cond)}")
-      return(NULL)
-    })
-
-    return(res)
-    
-  })
-
-  .list = .list[!sapply(.list, is.null)]
-  
-  # if(length(.list) == 0){
-  #   logger::log_error("No outcomes were estimated")
-  #   return(NULL)
-  # } else if(length(.list) == 1){
-  #   return(.list[[1]])
-  # } else {
-  #   return(.list)
-  # }
-
-
-  if(length(.list) == 0){
-    logger::log_error("No outcomes were estimated")
-    return(NULL)
-  } else {
-    return(.list)
-  }
-
-
-}
-
-
-
-
-
-#' Distributed Lags Models v2
-#'
-#' This is experimental but may be faster for multiple outcomes.
-#' @param data A data frame containing the unit, time, outcome, covariates, and any additional fixed effects
-#' @param exposure_data A data frame containing the unit, time, and exposure variables
-#' @param from_rt The starting lag period.
-#' @param to_rt The ending lag period.
-#' @param outcome The outcome variable.
-#' @param exposure The exposure variable.
-#' @param unit The unit identifier.
-#' @param time The time variable.
-#' @param covariates Vector of covariates for the model.
-#' @param addl_fes Vector of additional fixed effects for the model.
-#' @param ref_period Reference period (default -1)
-#' @param weights Weights to be included in the regression
-#' @param dd Whether to include the DD estimate in the plot
-#' @param n Number of digits to round to (for the DD estimates)
-#' @param dict A dictionary of variable names
-#' @param remove_unit_FE Whether to remove the unit fixed effects
-#' @param addl_arguments Additional arguments to be included in the model, as strings
-#' @param verbose If TRUE, print detailed logging (formula, timing, etc.). Default FALSE.
-#' @return A list containing model results, coefficients, and plots.
-#' @export
-#'
-distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols", plot_type = "ribbon", verbose = FALSE){
 
   outcomes <- c(outcomes)
 
@@ -911,7 +688,7 @@ distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcome
 
   if (verbose) logger::log_info("DLM: Formula: {fmla_str}")
 
-  # Estimate model with arguments
+  # Estimate all outcomes in a single fixest call (multi-LHS)
   arguments = c("data = tmp", "cluster = ~unit", "fixef.rm = 'none'", addl_arguments)
   if(!is.null(weights)){
     arguments = c(arguments, glue("weights = ~{weights}"))
@@ -1050,26 +827,34 @@ distributed_lags_models2 = function(data, exposure_data, from_rt, to_rt, outcome
     return(res)
 
   })
-  
+
   .list = .list[!sapply(.list, is.null)]
-  
-  # if(length(.list) == 0){
-  #   logger::log_error("No outcomes were estimated")
-  #   return(NULL)
-  # } else if(length(.list) == 1){
-  #   return(.list[[1]])
-  # } else {
-  #   return(.list)
-  # }
-  
-  
+
   if(length(.list) == 0){
-    logger::log_error("No outcomes were estimated")
+    logger::log_error("DLM: No outcomes were estimated")
     return(NULL)
   } else {
     return(.list)
   }
-  
-  
+
+}
+
+
+
+#' Distributed Lags Models (Deprecated)
+#'
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#'
+#' `distributed_lags_models2()` was renamed to [distributed_lags_models()].
+#' This wrapper calls [distributed_lags_models()] and will be removed in a future version.
+#'
+#' @inheritParams distributed_lags_models
+#' @return A list containing model results, coefficients, and plots.
+#' @export
+#'
+distributed_lags_models2 = function(...){
+  warning("distributed_lags_models2() is deprecated. Use distributed_lags_models() instead.", call. = FALSE)
+  distributed_lags_models(...)
 }
 
