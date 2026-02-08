@@ -90,8 +90,10 @@ The resulting betas have the same interpretation as event-study coefficients: dy
   </div>
 </div>
 
-## Citation
+## Citation and Acknowledgment
 
-If you use this package, please cite:
+These packages implement the distributed lag model method introduced by Schmidheiny and Siegloch (2023) and borrow in part from their [replication code](https://doi.org/10.1002/jae.2971). The packages themselves — including all bugs and design decisions — are by [Theodore Caputi](https://www.theodorecaputi.com) and are not affiliated with or endorsed by the original authors.
+
+If you use the underlying method, please cite the original paper:
 
 > Schmidheiny, K. and S. Siegloch (2023). "On event studies and distributed-lag models: Equivalence, generalization and practical implications." *Journal of Applied Econometrics*, 38(5): 695–713.
