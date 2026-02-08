@@ -65,6 +65,18 @@ mod <- distributed_lags_model(
 mod$betas
 ```
 
+Output:
+
+```
+           time_to_event        coef        se
+post_lead2            -3 -0.11846256 0.4729260
+post_lead1            -2 -0.06327287 0.5139965
+post_lag0              0 -2.64104056 0.5438700
+post_lag1              1 -2.26029265 0.5234023
+post_lag2              2 -3.04210098 0.5674556
+post_lag3              3 -2.61751913 0.4214689
+```
+
 ### Custom reference period
 
 ```r
@@ -167,6 +179,8 @@ mod$betas
 mod$plot
 ```
 
+![Default event-study plot](../assets/plot_r_guide_default.png){ width="600" }
+
 The plot is a `ggplot2` object. Customize it:
 
 ```r
@@ -175,23 +189,13 @@ mod$plot +
   ggplot2::theme_minimal()
 ```
 
+![Customized event-study plot](../assets/plot_r_guide_custom.png){ width="600" }
+
 ### Access the underlying fixest model
 
 ```r
 summary(mod$model)
 fixest::coeftable(mod$model)
-```
-
-### Aggregate treatment effects
-
-The DLM's beta coefficients can be averaged directly:
-
-```r
-# Mean post-treatment effect
-mean(mod$betas$coef[mod$betas$time_to_event >= 0])
-
-# Mean pre-treatment effect (parallel-trends check)
-mean(mod$betas$coef[mod$betas$time_to_event < 0])
 ```
 
 ## Test Data Generator

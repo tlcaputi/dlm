@@ -20,6 +20,19 @@ Both packages include a data generator that creates a balanced panel with stagge
     str(df)
     ```
 
+    Output:
+
+    ```
+    'data.frame':	10000 obs. of  7 variables:
+     $ group             : Factor w/ 500 levels "group1","group2",..: 1 1 1 1 1 ...
+     $ time              : int  1 2 3 4 5 6 7 8 9 10 ...
+     $ treatment_time    : int  7 7 7 7 7 7 7 7 7 7 ...
+     $ treat             : num  1 1 1 1 1 1 1 1 1 1 ...
+     $ years_to_treatment: num  -6 -5 -4 -3 -2 -1 0 1 2 3 ...
+     $ post              : num  0 0 0 0 0 0 1 1 1 1 ...
+     $ outcome           : num  -4.68 3.52 2.48 8.83 -2.54 ...
+    ```
+
 === "Stata"
 
     ```stata
@@ -37,19 +50,29 @@ Both packages include a data generator that creates a balanced panel with stagge
       Treated units:  195 (39%)
       Treatment time: uniformly in {7, 8, 9}
       Treatment effect: -3 (post-treatment)
+
+    Contains data
+     Observations:        10,000
+        Variables:             7
+    ---------------------------------------------------------------
+    Variable      Storage   Display    Value
+        name         type    format    label      Variable label
+    ---------------------------------------------------------------
+    unit            long    %12.0g                Unit identifier
+    time            long    %12.0g                Time period
+    treat           byte    %8.0g                 Treatment group indicator
+    treatment_time  long    %12.0g                Period when treatment begins
+    years_to_trea~t long    %12.0g                Periods relative to treatment
+                                                    (-1000 = never treated)
+    post            byte    %8.0g                 Post-treatment indicator
+    outcome         double  %10.0g                Outcome (noise + treatment
+                                                    effect)
+    ---------------------------------------------------------------
+    Sorted by: unit  time
     ```
 
-    Variables created:
-
-    | Variable | Description |
-    |---|---|
-    | `unit` | Unit identifier (1 to N) |
-    | `time` | Time period (1 to T) |
-    | `treat` | 1 if unit ever treated, 0 otherwise |
-    | `treatment_time` | Period when treatment begins (7, 8, or 9) |
-    | `years_to_treatment` | Periods relative to treatment (−1000 if never treated) |
-    | `post` | 1 if post-treatment, 0 otherwise |
-    | `outcome` | Simulated outcome |
+!!! note
+    R and Stata use different random number generators, so `seed = 42` produces different data in each language. The coefficients differ numerically but the DLM works identically in both.
 
 ## Estimate the DLM
 
@@ -73,6 +96,18 @@ Both packages include a data generator that creates a balanced panel with stagge
     )
 
     mod$betas
+    ```
+
+    Output:
+
+    ```
+               time_to_event        coef        se
+    post_lead2            -3 -0.11846256 0.4729260
+    post_lead1            -2 -0.06327287 0.5139965
+    post_lag0              0 -2.64104056 0.5438700
+    post_lag1              1 -2.26029265 0.5234023
+    post_lag2              2 -3.04210098 0.5674556
+    post_lag3              3 -2.61751913 0.4214689
     ```
 
 === "Stata"
@@ -114,9 +149,54 @@ The output table shows **beta coefficients** — cumulative treatment effects at
 - **Post-treatment betas** (t ≥ 0): Estimate the cumulative causal effect at each horizon.
 - **Reference period** (t = −1): Normalized to zero by construction.
 
-In the example above, the true treatment effect is −3. The estimated post-treatment betas (−2.76, −3.09, −2.71, −3.26) cluster around −3, while pre-treatment betas (−0.06, 0.09) are close to zero — exactly as expected.
+In both examples, the true treatment effect is −3. The estimated post-treatment betas cluster around −3, while pre-treatment betas are close to zero — exactly as expected.
 
 Because the test data uses a binary absorbing treatment, these betas are numerically identical to what a canonical binned-endpoint event study would produce on the same data. Both the R and Stata packages include equivalence tests that verify this match to machine precision (~10⁻¹³).
+
+## Plot the Results
+
+=== "R"
+
+    The returned model object includes a ready-made event-study plot:
+
+    ```r
+    mod$plot
+    ```
+
+    ![R Event-Study Plot](../assets/plot_quickstart_r.png){ width="600" }
+
+=== "Stata"
+
+    Construct the plot from the `e(betas)` matrix:
+
+    ```stata
+    matrix b = e(betas)
+
+    preserve
+    clear
+    local nr = rowsof(b)
+    set obs `nr'
+    gen time_to_event = .
+    gen coef = .
+    gen ci_lo = .
+    gen ci_hi = .
+    forvalues i = 1/`nr' {
+        replace time_to_event = b[`i', 1] in `i'
+        replace coef = b[`i', 2] in `i'
+        replace ci_lo = b[`i', 4] in `i'
+        replace ci_hi = b[`i', 5] in `i'
+    }
+
+    twoway (rcap ci_lo ci_hi time_to_event, lcolor(navy)) ///
+           (scatter coef time_to_event, mcolor(navy) msymbol(circle)), ///
+           yline(0, lpattern(dash) lcolor(gray)) ///
+           xline(-0.5, lpattern(dash) lcolor(gray)) ///
+           xtitle("Periods to Treatment") ytitle("Coefficient") ///
+           title("Event-Study Plot (DLM)") legend(off)
+    restore
+    ```
+
+    ![Stata Event-Study Plot](../assets/plot_quickstart_stata.png){ width="600" }
 
 ## Access Results Programmatically
 
@@ -125,6 +205,13 @@ Because the test data uses a binary absorbing treatment, these betas are numeric
     ```r
     # Beta coefficients (data.frame: time_to_event, coef, se)
     mod$betas
+    #            time_to_event        coef        se
+    # post_lead2            -3 -0.11846256 0.4729260
+    # post_lead1            -2 -0.06327287 0.5139965
+    # post_lag0              0 -2.64104056 0.5438700
+    # post_lag1              1 -2.26029265 0.5234023
+    # post_lag2              2 -3.04210098 0.5674556
+    # post_lag3              3 -2.61751913 0.4214689
 
     # Event-study plot (ggplot2 object)
     mod$plot
@@ -137,6 +224,7 @@ Because the test data uses a binary absorbing treatment, these betas are numeric
 
     # Number of observations
     nobs(mod$model)
+    # [1] 7500
     ```
 
 === "Stata"
@@ -144,17 +232,44 @@ Because the test data uses a binary absorbing treatment, these betas are numeric
     ```stata
     * Beta coefficients (time, coef, se, ci_lo, ci_hi)
     matrix list e(betas)
+    ```
 
+    ```
+    e(betas)[7,5]
+        time_to_ev~t          coef            se         ci_lo         ci_hi
+    r1            -3    -.06395882     .48354546    -1.0117079     .88379028
+    r2            -2     .09466869     .48042378    -.84696192     1.0362993
+    r3            -1             0             0             0             0
+    r4             0    -2.7639728     .46190658    -3.6693097    -1.8586358
+    r5             1    -3.0942824     .52041411    -4.1142941    -2.0742708
+    r6             2    -2.7076914     .55493963    -3.7953731    -1.6200097
+    r7             3    -3.2569205     .42619968    -4.0922719    -2.4215691
+    ```
+
+    ```stata
     * Raw gamma coefficients from the lead/lag regression
     matrix list e(gamma)
+    ```
 
-    * Gamma variance-covariance matrix
-    matrix list e(gamma_V)
+    ```
+    e(gamma)[1,6]
+        _dlm_lead2  _dlm_lead1   _dlm_lag0   _dlm_lag1   _dlm_lag2   _dlm_lag3
+    y1    .1586275  -.09466869  -2.7639728  -.33030967   .38659102  -.54922912
+    ```
 
+    ```stata
     * Scalars
     display e(N)          // number of observations
     display e(N_clust)    // number of clusters
     display e(from)       // from period
     display e(to)         // to period
     display e(ref_period) // reference period
+    ```
+
+    ```
+    7500
+    500
+    -3
+    3
+    -1
     ```

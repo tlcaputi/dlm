@@ -32,6 +32,31 @@ dlm_gen_data, n_groups(500) n_times(20) treat_prob(0.4) seed(42) clear
 dlm outcome, exposure(post) unit(unit) time(time) from(-3) to(3)
 ```
 
+Output:
+
+```
+------------------------------------------------------------------------
+Distributed Lag Model (Schmidheiny & Siegloch 2023)
+------------------------------------------------------------------------
+  Outcome:    outcome
+  Exposure:   post
+  Window:     [-3, 3], ref = -1
+  N obs:      7500
+  N clusters: 500
+------------------------------------------------------------------------
+
+        Time        Coef          SE     95% CI lo     95% CI hi
+------------------------------------------------------------------------
+          -3   -0.063959    0.483545     -1.011708      0.883790
+          -2    0.094669    0.480424     -0.846962      1.036299
+          -1       (ref)           .             .             .
+           0   -2.763973    0.461907     -3.669310     -1.858636
+           1   -3.094282    0.520414     -4.114294     -2.074271
+           2   -2.707691    0.554940     -3.795373     -1.620010
+           3   -3.256921    0.426200     -4.092272     -2.421569
+------------------------------------------------------------------------
+```
+
 ### Wider event window
 
 ```stata
@@ -151,6 +176,8 @@ twoway (rcap ci_lo ci_hi time_to_event, lcolor(navy)) ///
        title("Event Study (DLM)") legend(off)
 restore
 ```
+
+![Stata event-study plot](../assets/plot_stata_guide.png){ width="600" }
 
 ## Data Preservation
 
