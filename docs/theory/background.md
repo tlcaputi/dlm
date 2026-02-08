@@ -2,6 +2,109 @@
 
 This page summarizes the key theoretical results from Schmidheiny and Siegloch (2023), "On event studies and distributed-lag models: Equivalence, generalization and practical implications," *Journal of Applied Econometrics*, 38(5): 695–713.
 
+## Intuition: From Event Studies to DLMs
+
+Most researchers are familiar with the canonical event study. This section uses that familiarity as a starting point and shows, step by step, how the distributed lag model is a reparametrization of the same idea — and why that reparametrization unlocks continuous treatments.
+
+### Step 1: The canonical event study (what you already know)
+
+In a canonical event study, you observe a panel of units over time. Some units receive a binary treatment that turns on at a known date and stays on. You want to trace out the treatment effect *dynamically* — how does the outcome change at 2 periods before treatment, 1 period before, the period of treatment, 1 period after, etc.?
+
+To do this, you create **event-time dummy variables**. Each dummy equals 1 if a unit is exactly $k$ periods away from its treatment onset, and 0 otherwise. You pick a reference period (typically $k = -1$) and omit it. Then you regress the outcome on these dummies plus unit and time fixed effects.
+
+**Concrete example.** Suppose Unit A is treated at time 5 and you want a window from $-2$ to $+2$ with reference period $-1$. Your data looks like:
+
+| unit | time | outcome | event\_time | $D_{-2}$ | $D_{0}$ | $D_{1}$ | $D_{2}$ |
+|------|------|---------|------------|-----------|----------|----------|----------|
+| A    | 3    | 12.3    | −2         | 1         | 0        | 0        | 0        |
+| A    | 4    | 11.9    | −1 (ref)   | 0         | 0        | 0        | 0        |
+| A    | 5    | 8.7     | 0          | 0         | 1        | 0        | 0        |
+| A    | 6    | 9.1     | 1          | 0         | 0        | 1        | 0        |
+| A    | 7    | 8.4     | 2          | 0         | 0        | 0        | 1        |
+
+You then estimate:
+
+$$y_{it} = \alpha_i + \lambda_t + \beta_{-2} D_{it}^{-2} + \beta_0 D_{it}^{0} + \beta_1 D_{it}^{1} + \beta_2 D_{it}^{2} + \varepsilon_{it}$$
+
+The $\beta$ coefficients are your event-study estimates — each one measures the treatment effect at a particular time horizon relative to the reference period.
+
+### Step 2: The DLM (same data, different columns)
+
+The DLM takes the **same data** but constructs different regressors. Instead of asking "what event-time period is this unit in?", it asks: "what is this unit's treatment status at various time offsets?"
+
+Specifically, it creates **leads** (future values) and **lags** (current and past values) of the treatment variable. For the same window ($-2$ to $+2$), it creates:
+
+- $x_{t+1}$: treatment value 1 period in the **future** (1 lead, because $|-2| - 1 = 1$)
+- $x_{t}$: treatment value **now** (lag 0)
+- $x_{t-1}$: treatment value 1 period in the **past** (lag 1)
+- $x_{t-2}$: treatment value 2 periods in the **past** (lag 2)
+
+Here is the same data for Unit A (treated at time 5, so `post` switches from 0 to 1 at time 5):
+
+| unit | time | outcome | post | $x_{t+1}$ | $x_{t}$ | $x_{t-1}$ | $x_{t-2}$ |
+|------|------|---------|------|-----------|----------|-----------|-----------|
+| A    | 3    | 12.3    | 0    | 0         | 0        | 0         | 0         |
+| A    | 4    | 11.9    | 0    | 1         | 0        | 0         | 0         |
+| A    | 5    | 8.7     | 1    | 1         | 1        | 0         | 0         |
+| A    | 6    | 9.1     | 1    | 1         | 1        | 1         | 0         |
+| A    | 7    | 8.4     | 1    | 1         | 1        | 1         | 1         |
+
+You then estimate:
+
+$$y_{it} = \alpha_i + \lambda_t + \gamma_1^{\text{lead}} \cdot x_{i,t+1} + \gamma_0^{\text{lag}} \cdot x_{it} + \gamma_1^{\text{lag}} \cdot x_{i,t-1} + \gamma_2^{\text{lag}} \cdot x_{i,t-2} + \varepsilon_{it}$$
+
+The $\gamma$ coefficients measure **incremental** changes in the treatment effect at each time offset.
+
+### Step 3: The equivalence (betas = cumulative sums of gammas)
+
+The key result from Schmidheiny & Siegloch (2023) is that the event-study $\beta$ coefficients are just **cumulative sums** of the DLM $\gamma$ coefficients:
+
+| Event-study $\beta$ | Equals | Intuition |
+|---------------------|--------|-----------|
+| $\beta_{-2}$        | $-\gamma_1^{\text{lead}}$ | Negative of the single lead gamma |
+| $\beta_{-1}$        | 0 (reference) | Normalized to zero |
+| $\beta_{0}$         | $\gamma_0^{\text{lag}}$ | Just the contemporaneous gamma |
+| $\beta_{1}$         | $\gamma_0^{\text{lag}} + \gamma_1^{\text{lag}}$ | Cumulative sum of two gammas |
+| $\beta_{2}$         | $\gamma_0^{\text{lag}} + \gamma_1^{\text{lag}} + \gamma_2^{\text{lag}}$ | Cumulative sum of three gammas |
+
+In other words, **gammas are incremental** (the marginal change at each step) and **betas are cumulative** (the total effect up to that point). The two representations contain exactly the same information — you can always convert between them.
+
+When applied to binary treatment data, the DLM betas are numerically identical to the event-study betas. Both the R and Stata packages verify this to machine precision (~10⁻¹³).
+
+### Step 4: Why this matters — continuous treatments
+
+With a binary treatment, both approaches give identical answers, and event-time dummies are perfectly natural. But now consider a **continuous treatment** — say, a tax rate that changes by different amounts at different times:
+
+| unit | time | outcome | tax\_rate |
+|------|------|---------|----------|
+| A    | 3    | 12.3    | 0        |
+| A    | 4    | 11.9    | 0        |
+| A    | 5    | 8.7     | 5.0      |
+| A    | 6    | 7.1     | 8.5      |
+| A    | 7    | 9.4     | 3.0      |
+
+**The canonical event study breaks down.** There is no single "treatment onset" to anchor event-time dummies. When did treatment start — when the rate went to 5? And what is "2 periods after treatment" when the rate keeps changing? Researchers who want to use event-time dummies here must typically dichotomize the treatment into "big changes" vs. no change, discarding variation and fundamentally altering the analysis (Schmidheiny & Siegloch 2023, Section 4.3).
+
+**The DLM works perfectly.** Just create leads and lags of `tax_rate`:
+
+| unit | time | outcome | tax\_rate | $x_{t+1}$ | $x_t$ | $x_{t-1}$ | $x_{t-2}$ |
+|------|------|---------|----------|-----------|--------|-----------|-----------|
+| A    | 3    | 12.3    | 0        | 0         | 0      | 0         | 0         |
+| A    | 4    | 11.9    | 0        | 5.0       | 0      | 0         | 0         |
+| A    | 5    | 8.7     | 5.0      | 8.5       | 5.0    | 0         | 0         |
+| A    | 6    | 7.1     | 8.5      | 3.0       | 8.5    | 5.0       | 0         |
+| A    | 7    | 9.4     | 3.0      | ...       | 3.0    | 8.5       | 5.0       |
+
+The same regression specification works. The gammas now measure the effect of a **one-unit increase** in the treatment variable at each time offset, and the betas (cumulative sums) trace out a dynamic treatment effect plot — exactly the kind of plot researchers are used to seeing from event studies, but now for a continuous treatment.
+
+This is the core contribution of the DLM framework: it **generalizes the canonical event study to continuous treatments** while being **exactly equivalent** in the binary case.
+
+---
+
+## Formal Specification
+
+The sections below present the formal econometric specification from Schmidheiny & Siegloch (2023).
+
 ## Event-Study Regression
 
 The standard event-study specification is:
