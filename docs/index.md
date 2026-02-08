@@ -73,6 +73,14 @@ The resulting betas have the same interpretation as event-study coefficients: dy
 | Multiple outcomes per call | ✓ | Loop externally |
 | Weighted regression | ✓ | — |
 
+## GitHub
+
+| | |
+|---|---|
+| **R package** | [github.com/tlcaputi/dlm](https://github.com/tlcaputi/dlm) |
+| **Stata package** | [github.com/tlcaputi/dlm-stata](https://github.com/tlcaputi/dlm-stata) |
+| **Developer** | [Theodore Caputi](https://www.theodorecaputi.com) |
+
 ## Citation
 
 If you use this package, please cite:

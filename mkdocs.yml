@@ -1,6 +1,8 @@
 site_name: dlm — Distributed Lag Models
 site_description: R and Stata implementations of distributed lag models (Schmidheiny & Siegloch 2023)
 site_url: https://tlcaputi.github.io/dlm/
+repo_url: https://github.com/tlcaputi/dlm
+repo_name: tlcaputi/dlm
 
 theme:
   name: material

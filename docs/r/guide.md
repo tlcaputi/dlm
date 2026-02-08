@@ -192,17 +192,6 @@ mean(mod$betas$coef[mod$betas$time_to_event >= 0])
 mean(mod$betas$coef[mod$betas$time_to_event < 0])
 ```
 
-For standard event studies estimated with `fixest::i()`, you can also use `aggr_es()`:
-
-```r
-# Only works with fixest models estimated via i(), NOT with DLM models
-library(fixest)
-est <- feols(y ~ i(event_time, treat, ref = -1) | unit + time, data = df)
-aggr_es(est, period = "post")
-aggr_es(est, period = "pre")
-aggr_es(est, aggregation = "cumulative")
-```
-
 ## Test Data Generator
 
 ```r

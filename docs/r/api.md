@@ -114,33 +114,6 @@ standard_twfe_for_comparison(
 
 ---
 
-## `aggr_es()`
-
-Aggregate event-study treatment effects. Works with **fixest models estimated via `i()`** (standard event studies), not DLM models.
-
-### Usage
-
-```r
-aggr_es(object, period = "post", aggregation = "mean")
-```
-
-| Argument | Description |
-|---|---|
-| `object` | A `fixest` model estimated with `i()` |
-| `rhs` | Null hypothesis value (default `0`) |
-| `period` | `"post"` (default), `"pre"`, or `"both"` |
-| `aggregation` | `"mean"` (default) or `"cumulative"` |
-
-### Example
-
-```r
-library(fixest)
-est <- feols(y ~ i(event_time, treat, ref = -1) | unit + time, data = df)
-aggr_es(est, period = "post")
-```
-
----
-
 ## Helper Functions
 
 | Function | Description |
@@ -148,5 +121,3 @@ aggr_es(est, period = "post")
 | `revcumsum(x)` | Reverse cumulative sum of a vector |
 | `secumsum(cov)` | SE of forward cumulative sum from a VCV matrix |
 | `serevcumsum(cov)` | SE of reverse cumulative sum from a VCV matrix |
-| `iplot_data(mod)` | Extract plot data from a fixest model |
-| `ggiplot(mod, ...)` | ggplot2-based event-study plot from a fixest model |
