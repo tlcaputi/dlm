@@ -1,0 +1,197 @@
+---
+title: "Distributed Lag Models and Event Study Equivalence"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Distributed Lag Models and Event Study Equivalence}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4
+)
+```
+
+## Overview
+
+The `dlm` package estimates distributed lag models (DLMs), which
+Schmidheiny and Siegloch (2023, *Journal of Applied Econometrics*)
+show are **mathematically equivalent** to event studies with binned
+endpoints. The key result is that event-study coefficients can be
+recovered from DLM coefficients via cumulative summation, and the
+two approaches yield identical estimates and standard errors when
+applied to the same sample.
+
+This vignette demonstrates the equivalence on simulated data and
+shows the basic workflow of the package.
+
+## Setup
+
+```{r setup, message = FALSE}
+library(dlm)
+library(fixest)
+```
+
+## Generate example data
+
+`generate_data()` creates a balanced panel with a staggered binary
+treatment. 40% of units are treated at a random time between
+periods 7--9; the remaining 60% are never treated. The true
+treatment effect is **-3**.
+
+```{r generate}
+df <- generate_data(seed = 1234)
+head(df)
+```
+
+## Estimate a DLM
+
+We estimate a distributed lag model with an effect window from -3
+to +3 relative to treatment, using period -1 as the reference.
+
+```{r dlm}
+results <- distributed_lags_models(
+  data          = df,
+  exposure_data = df,
+  from_rt       = -3,
+  to_rt         = 3,
+  outcomes      = "outcome",
+  exposure      = "post",
+  unit          = "group",
+  time          = "time",
+  ref_period    = -1
+)
+
+results[[1]]$betas
+```
+
+The `betas` data frame contains the event-study coefficients and
+standard errors recovered from the DLM via cumulative summation of
+the underlying gamma (first-difference) parameters.
+
+## Plot
+
+The package produces a plot automatically:
+
+```{r plot}
+results[[1]]$plot
+```
+
+## Proving DLM--Event Study Equivalence
+
+We now verify the equivalence by estimating a standard event study
+with binned endpoints on the **exact same sample** used by the DLM.
+
+The DLM drops observations where leads or lags are undefined (i.e.,
+near the boundaries of the panel), so we restrict the event study
+to the same time window.
+
+```{r equivalence}
+from_rt <- -3
+to_rt   <- 3
+ref_period <- -1
+
+# Restrict to the DLM's effective sample
+tw_min <- to_rt + 1
+tw_max <- max(df$time) - (abs(from_rt) - 1)
+df_r   <- df[df$time >= tw_min & df$time <= tw_max, ]
+
+# Estimate the equivalent event study with binned endpoints
+es_model <- feols(
+  outcome ~ i(years_to_treatment, treat,
+              ref  = c(ref_period, -1000),
+              bin  = list("-3+" = ~x <= -3, "3+" = ~x >= 3)) |
+    group + time,
+  data    = df_r,
+  cluster = ~group
+)
+es_ct <- as.data.frame(es_model$coeftable)
+```
+
+Now compare the two sets of estimates:
+
+```{r compare}
+comparison <- data.frame(
+  period   = results[[1]]$betas$time_to_event,
+  dlm_coef = results[[1]]$betas$coef,
+  es_coef  = es_ct[, 1],
+  dlm_se   = results[[1]]$betas$se,
+  es_se    = es_ct[, 2]
+)
+comparison$coef_diff <- abs(comparison$dlm_coef - comparison$es_coef)
+comparison$se_diff   <- abs(comparison$dlm_se   - comparison$es_se)
+comparison
+```
+
+```{r verify}
+cat("Max coefficient difference:",
+    format(max(comparison$coef_diff), scientific = TRUE), "\n")
+cat("Max SE difference:         ",
+    format(max(comparison$se_diff), scientific = TRUE), "\n")
+```
+
+Differences are on the order of 10^-12^ --- well within
+floating-point precision. The DLM and event study are
+**numerically identical**.
+
+## Multiple outcomes
+
+`distributed_lags_models()` accepts a vector of outcome names and
+estimates each one using the same set of leads and lags, avoiding
+redundant computation.
+
+```{r multi}
+# Add a second outcome
+df$outcome2 <- rnorm(nrow(df), sd = 5) +
+  ifelse(df$years_to_treatment >= 0 & df$years_to_treatment != -1000,
+         -1.5, 0)
+
+multi <- distributed_lags_models(
+  data          = df,
+  exposure_data = df,
+  from_rt       = -3,
+  to_rt         = 3,
+  outcomes      = c("outcome", "outcome2"),
+  exposure      = "post",
+  unit          = "group",
+  time          = "time",
+  ref_period    = -1
+)
+
+multi[[1]]$betas
+multi[[2]]$betas
+```
+
+## Covariates
+
+Add time-varying covariates with the `covariates` argument:
+
+```{r covariates}
+df$x1 <- rnorm(nrow(df))
+
+cov_results <- distributed_lags_models(
+  data          = df,
+  exposure_data = df,
+  from_rt       = -3,
+  to_rt         = 3,
+  outcomes      = "outcome",
+  exposure      = "post",
+  unit          = "group",
+  time          = "time",
+  ref_period    = -1,
+  covariates    = "x1"
+)
+
+cov_results[[1]]$betas
+```
+
+## References
+
+Schmidheiny, K. and Siegloch, S. (2023). On Event Studies and
+Distributed-Lags in Two-Way Fixed Effects Models: Identification,
+Equivalence, and Generalization. *Journal of Applied Econometrics*,
+38(5), 695--713.
