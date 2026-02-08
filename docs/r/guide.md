@@ -152,11 +152,13 @@ names(mod)
 
 ```r
 mod$betas
-#   time_to_event       coef        se
-# 1            -3  0.1234567 0.4567890
-# 2            -2 -0.0987654 0.4321098
-# 3             0 -2.8765432 0.4012345
-# ...
+#            time_to_event        coef        se
+# post_lead2            -3 -0.11846256 0.4729260
+# post_lead1            -2 -0.06327287 0.5139965
+# post_lag0              0 -2.64104056 0.5438700
+# post_lag1              1 -2.26029265 0.5234023
+# post_lag2              2 -3.04210098 0.5674556
+# post_lag3              3 -2.61751913 0.4214689
 ```
 
 ### Built-in event-study plot

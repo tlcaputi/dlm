@@ -56,13 +56,13 @@ The endpoints are "binned" — the $D_{-3}$ dummy equals 1 for all units at even
 
     # Event-study coefficients
     es$betas
-    #   time_to_event       coef        se
-    # 1            -3 -0.0639590 0.4835454
-    # 2            -2  0.0946686 0.4804242
-    # 3             0 -2.7639731 0.4619074
-    # 4             1 -3.0942824 0.5204137
-    # 5             2 -2.7076914 0.5549396
-    # 6             3 -3.2569207 0.4262002
+    #                                     coef        se       tval         pval
+    # time_to_treatment::-3+:treat -0.11846256 0.4729260 -0.2504886 8.023126e-01
+    # time_to_treatment::-2:treat  -0.06327287 0.5139965 -0.1230998 9.020776e-01
+    # time_to_treatment::0:treat   -2.64104056 0.5438700 -4.8560142 1.605193e-06
+    # time_to_treatment::1:treat   -2.26029265 0.5234023 -4.3184616 1.896217e-05
+    # time_to_treatment::2:treat   -3.04210098 0.5674556 -5.3609494 1.267789e-07
+    # time_to_treatment::3+:treat  -2.61751913 0.4214689 -6.2104686 1.113671e-09
     ```
 
 === "Stata"
@@ -106,7 +106,10 @@ The endpoints are "binned" — the $D_{-3}$ dummy equals 1 for all units at even
              es_3 |  -3.256921    0.426200    -7.64   0.000
     ```
 
-**Interpretation.** The pre-treatment coefficients at $t = -3$ and $t = -2$ are near zero (−0.06 and 0.09), consistent with parallel trends. The post-treatment coefficients cluster around −3, matching the true effect.
+    !!! note
+        Stata and R use different random number generators, so `seed(42)` produces different data in each language. The coefficients differ numerically but the equivalence (DLM = event study) holds in both.
+
+**Interpretation.** The pre-treatment coefficients at $t = -3$ and $t = -2$ are near zero, consistent with parallel trends. The post-treatment coefficients cluster around −2.3 to −3.3, matching the true effect of −3.
 
 ## Step 3: Run the DLM
 
@@ -126,13 +129,13 @@ Now we estimate the same relationship using the DLM. Instead of event-time dummi
 
     # DLM beta coefficients
     mod$betas
-    #   time_to_event       coef        se
-    # 1            -3 -0.0639590 0.4835454
-    # 2            -2  0.0946686 0.4804242
-    # 3             0 -2.7639731 0.4619074
-    # 4             1 -3.0942824 0.5204137
-    # 5             2 -2.7076914 0.5549396
-    # 6             3 -3.2569207 0.4262002
+    #            time_to_event        coef        se
+    # post_lead2            -3 -0.11846256 0.4729260
+    # post_lead1            -2 -0.06327287 0.5139965
+    # post_lag0              0 -2.64104056 0.5438700
+    # post_lag1              1 -2.26029265 0.5234023
+    # post_lag2              2 -3.04210098 0.5674556
+    # post_lag3              3 -2.61751913 0.4214689
     ```
 
 === "Stata"
@@ -185,15 +188,15 @@ Let's confirm the equivalence numerically.
     )
     print(comparison)
     #   time    dlm_beta     es_beta   difference
-    # 1   -3 -0.06395904 -0.06395904 1.110223e-15
-    # 2   -2  0.09466863  0.09466863 4.440892e-16
-    # 3    0 -2.76397307 -2.76397307 4.440892e-16
-    # 4    1 -3.09428243 -3.09428243 8.881784e-16
-    # 5    2 -2.70769138 -2.70769138 4.440892e-16
-    # 6    3 -3.25692067 -3.25692067 0.000000e+00
+    # 1   -3 -0.11846256 -0.11846256 2.178119e-13
+    # 2   -2 -0.06327287 -0.06327287 3.711059e-13
+    # 3    0 -2.64104056 -2.64104056 3.312906e-13
+    # 4    1 -2.26029265 -2.26029265 5.448975e-13
+    # 5    2 -3.04210098 -3.04210098 3.108624e-14
+    # 6    3 -2.61751913 -2.61751913 4.898304e-13
 
     cat("Max difference:", max(comparison$difference), "\n")
-    # Max difference: 1.110223e-15
+    # Max difference: 5.448975e-13
     ```
 
 === "Stata"
@@ -237,35 +240,18 @@ Let's confirm the equivalence numerically.
           3   -3.256921    -3.256921     0.00e+00
     ```
 
-**The estimates match to machine precision** (~$10^{-15}$). This confirms the theoretical result from Schmidheiny & Siegloch (2023): for a binary absorbing treatment, the DLM is a numerically identical reparametrization of the canonical binned-endpoint event study.
+**The estimates match to machine precision** (~$10^{-13}$). This confirms the theoretical result from Schmidheiny & Siegloch (2023): for a binary absorbing treatment, the DLM is a numerically identical reparametrization of the canonical binned-endpoint event study.
 
 ## Step 5: Plot the Results
 
-Both approaches produce the same event-study plot — coefficients by event time, with the reference period normalized to zero. Here are the results from our example:
+Both approaches produce the same event-study plot — coefficients by event time, with the reference period normalized to zero.
 
-<figure markdown>
-  ![Canonical Event Study](../assets/plot_event_study.png){ width="600" }
-  <figcaption>Canonical event study: binned-endpoint event-time dummies with unit and time FE.</figcaption>
-</figure>
-
-<figure markdown>
-  ![Distributed Lag Model](../assets/plot_dlm.png){ width="600" }
-  <figcaption>DLM: leads and lags of the treatment variable, transformed to event-study betas.</figcaption>
-</figure>
-
-The two plots are identical — flat pre-trends near zero, then a sharp drop to around −3 at treatment onset. We can overlay them to confirm:
-
-<figure markdown>
-  ![DLM vs Event Study](../assets/plot_combined.png){ width="600" }
-  <figcaption>Overlaid estimates. The DLM (red) and event study (blue) are numerically identical.</figcaption>
-</figure>
-
-### Plotting code
+First, we prepare the data for plotting by adding the reference period ($t = -1$, normalized to zero) back into each set of results:
 
 === "R"
 
     ```r
-    # Build dataframes with the reference period included
+    # Add the reference period (t = -1, coef = 0) back in for plotting
     dlm_df <- data.frame(
       time_to_event = c(mod$betas$time_to_event, -1),
       coef = c(mod$betas$coef, 0),
@@ -277,8 +263,35 @@ The two plots are identical — flat pre-trends near zero, then a sharp drop to 
       coef = c(es$betas$coef[1:2], 0, es$betas$coef[3:6]),
       se = c(es$betas$se[1:2], 0, es$betas$se[3:6])
     )
+    ```
 
-    # Event-study plot
+=== "Stata"
+
+    ```stata
+    * Extract DLM results into a plotting dataset
+    matrix b = e(betas)
+
+    preserve
+    clear
+    local nr = rowsof(b)
+    set obs `nr'
+    gen time_to_event = .
+    gen coef = .
+    gen ci_lo = .
+    gen ci_hi = .
+    forvalues i = 1/`nr' {
+        replace time_to_event = b[`i', 1] in `i'
+        replace coef = b[`i', 2] in `i'
+        replace ci_lo = b[`i', 4] in `i'
+        replace ci_hi = b[`i', 5] in `i'
+    }
+    ```
+
+Now plot the canonical event-study estimates:
+
+=== "R"
+
+    ```r
     ggplot(es_df, aes(x = time_to_event, y = coef)) +
       geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
       geom_vline(xintercept = -0.5, linetype = "dashed", color = "gray80") +
@@ -288,8 +301,22 @@ The two plots are identical — flat pre-trends near zero, then a sharp drop to 
       labs(title = "Canonical Event Study",
            x = "Periods to Treatment", y = "Coefficient") +
       theme_minimal(base_size = 14)
+    ```
 
-    # DLM plot
+=== "Stata"
+
+    ```stata
+    * (Using the ES coefficients stored in _b[] from Step 2)
+    * Plot follows the same pattern as the DLM plot below
+    ```
+
+![Canonical Event Study](../assets/plot_event_study.png){ width="600" }
+
+And the DLM estimates:
+
+=== "R"
+
+    ```r
     ggplot(dlm_df, aes(x = time_to_event, y = coef)) +
       geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
       geom_vline(xintercept = -0.5, linetype = "dashed", color = "gray80") +
@@ -299,8 +326,28 @@ The two plots are identical — flat pre-trends near zero, then a sharp drop to 
       labs(title = "Distributed Lag Model",
            x = "Periods to Treatment", y = "Coefficient") +
       theme_minimal(base_size = 14)
+    ```
 
-    # Combined overlay
+=== "Stata"
+
+    ```stata
+    twoway (rcap ci_lo ci_hi time_to_event, lcolor(navy)) ///
+           (scatter coef time_to_event, mcolor(navy) msymbol(circle)), ///
+           yline(0, lpattern(dash) lcolor(gray)) ///
+           xline(-0.5, lpattern(dash) lcolor(gray)) ///
+           xtitle("Periods to Treatment") ytitle("Coefficient") ///
+           title("Event-Study Plot") legend(off)
+    restore
+    drop es_*
+    ```
+
+![Distributed Lag Model](../assets/plot_dlm.png){ width="600" }
+
+The two plots are identical. We can overlay them to confirm:
+
+=== "R"
+
+    ```r
     combined_df <- rbind(
       dlm_df %>% mutate(method = "DLM"),
       es_df %>% mutate(method = "Event Study")
@@ -321,37 +368,9 @@ The two plots are identical — flat pre-trends near zero, then a sharp drop to 
       theme(legend.position = "bottom")
     ```
 
-=== "Stata"
+![DLM vs Event Study](../assets/plot_combined.png){ width="600" }
 
-    ```stata
-    * Plot the event-study coefficients from the DLM
-    matrix b = e(betas)
-
-    preserve
-    clear
-    local nr = rowsof(b)
-    set obs `nr'
-    gen time_to_event = .
-    gen coef = .
-    gen ci_lo = .
-    gen ci_hi = .
-    forvalues i = 1/`nr' {
-        replace time_to_event = b[`i', 1] in `i'
-        replace coef = b[`i', 2] in `i'
-        replace ci_lo = b[`i', 4] in `i'
-        replace ci_hi = b[`i', 5] in `i'
-    }
-
-    twoway (rcap ci_lo ci_hi time_to_event, lcolor(navy)) ///
-           (scatter coef time_to_event, mcolor(navy) msymbol(circle)), ///
-           yline(0, lpattern(dash) lcolor(gray)) ///
-           xline(-0.5, lpattern(dash) lcolor(gray)) ///
-           xtitle("Periods to Treatment") ytitle("Coefficient") ///
-           title("Event-Study Plot") legend(off)
-    restore
-
-    drop es_*
-    ```
+Flat pre-trends near zero, then a sharp drop to around −2.6 at treatment onset — consistent with the true effect of −3. The DLM (red) and event study (blue) estimates are numerically identical.
 
 ## Why This Matters
 
