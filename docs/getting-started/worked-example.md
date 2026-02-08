@@ -265,13 +265,60 @@ The two plots are identical — flat pre-trends near zero, then a sharp drop to 
 === "R"
 
     ```r
-    # The DLM object includes a ready-made event-study plot
-    mod$plot
+    # Build dataframes with the reference period included
+    dlm_df <- data.frame(
+      time_to_event = c(mod$betas$time_to_event, -1),
+      coef = c(mod$betas$coef, 0),
+      se = c(mod$betas$se, 0)
+    )
 
-    # Or customize it
-    mod$plot +
-      labs(title = "Event-Study Plot", x = "Periods to Treatment") +
-      theme_minimal()
+    es_df <- data.frame(
+      time_to_event = c(-3, -2, -1, 0, 1, 2, 3),
+      coef = c(es$betas$coef[1:2], 0, es$betas$coef[3:6]),
+      se = c(es$betas$se[1:2], 0, es$betas$se[3:6])
+    )
+
+    # Event-study plot
+    ggplot(es_df, aes(x = time_to_event, y = coef)) +
+      geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+      geom_vline(xintercept = -0.5, linetype = "dashed", color = "gray80") +
+      geom_pointrange(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se),
+                      color = "#2980b9", size = 0.7, linewidth = 0.9) +
+      scale_x_continuous(breaks = -3:3) +
+      labs(title = "Canonical Event Study",
+           x = "Periods to Treatment", y = "Coefficient") +
+      theme_minimal(base_size = 14)
+
+    # DLM plot
+    ggplot(dlm_df, aes(x = time_to_event, y = coef)) +
+      geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+      geom_vline(xintercept = -0.5, linetype = "dashed", color = "gray80") +
+      geom_pointrange(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se),
+                      color = "#e74c3c", size = 0.7, linewidth = 0.9) +
+      scale_x_continuous(breaks = -3:3) +
+      labs(title = "Distributed Lag Model",
+           x = "Periods to Treatment", y = "Coefficient") +
+      theme_minimal(base_size = 14)
+
+    # Combined overlay
+    combined_df <- rbind(
+      dlm_df %>% mutate(method = "DLM"),
+      es_df %>% mutate(method = "Event Study")
+    )
+
+    ggplot(combined_df, aes(x = time_to_event, y = coef, color = method)) +
+      geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+      geom_vline(xintercept = -0.5, linetype = "dashed", color = "gray80") +
+      geom_pointrange(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se),
+                      position = position_dodge(width = 0.3),
+                      size = 0.7, linewidth = 0.9) +
+      scale_color_manual(values = c("DLM" = "#e74c3c", "Event Study" = "#2980b9")) +
+      scale_x_continuous(breaks = -3:3) +
+      labs(title = "DLM vs. Canonical Event Study",
+           subtitle = "Estimates are numerically identical for binary absorbing treatments",
+           x = "Periods to Treatment", y = "Coefficient", color = "") +
+      theme_minimal(base_size = 14) +
+      theme(legend.position = "bottom")
     ```
 
 === "Stata"
