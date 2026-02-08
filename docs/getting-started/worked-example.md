@@ -241,7 +241,26 @@ Let's confirm the equivalence numerically.
 
 ## Step 5: Plot the Results
 
-Both approaches produce the same event-study plot — coefficients by event time, with the reference period normalized to zero.
+Both approaches produce the same event-study plot — coefficients by event time, with the reference period normalized to zero. Here are the results from our example:
+
+<figure markdown>
+  ![Canonical Event Study](../assets/plot_event_study.png){ width="600" }
+  <figcaption>Canonical event study: binned-endpoint event-time dummies with unit and time FE.</figcaption>
+</figure>
+
+<figure markdown>
+  ![Distributed Lag Model](../assets/plot_dlm.png){ width="600" }
+  <figcaption>DLM: leads and lags of the treatment variable, transformed to event-study betas.</figcaption>
+</figure>
+
+The two plots are identical — flat pre-trends near zero, then a sharp drop to around −3 at treatment onset. We can overlay them to confirm:
+
+<figure markdown>
+  ![DLM vs Event Study](../assets/plot_combined.png){ width="600" }
+  <figcaption>Overlaid estimates. The DLM (red) and event study (blue) are numerically identical.</figcaption>
+</figure>
+
+### Plotting code
 
 === "R"
 
@@ -251,18 +270,7 @@ Both approaches produce the same event-study plot — coefficients by event time
 
     # Or customize it
     mod$plot +
-      labs(title = "Event-Study Plot (from DLM)", x = "Periods to Treatment") +
-      theme_minimal()
-
-    # You can also build the plot manually from the event-study results
-    ggplot(es$betas, aes(x = time_to_event, y = coef)) +
-      geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
-      geom_vline(xintercept = -0.5, linetype = "dashed", color = "gray50") +
-      geom_pointrange(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se)) +
-      labs(
-        title = "Event-Study Plot (from canonical ES)",
-        x = "Periods to Treatment", y = "Coefficient"
-      ) +
+      labs(title = "Event-Study Plot", x = "Periods to Treatment") +
       theme_minimal()
     ```
 
@@ -297,8 +305,6 @@ Both approaches produce the same event-study plot — coefficients by event time
 
     drop es_*
     ```
-
-The plot shows the classic event-study shape: flat pre-trends (coefficients near zero before treatment) and a sharp drop to around −3 at treatment onset, consistent with the true effect of −3.
 
 ## Why This Matters
 

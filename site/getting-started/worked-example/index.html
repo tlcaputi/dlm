@@ -498,6 +498,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Step 5: Plot the Results">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#plotting-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plotting code
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -940,6 +957,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Step 5: Plot the Results">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#plotting-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plotting code
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1186,7 +1220,24 @@
 </div>
 <p><strong>The estimates match to machine precision</strong> (~<span class="arithmatex">\(10^{-15}\)</span>). This confirms the theoretical result from Schmidheiny &amp; Siegloch (2023): for a binary absorbing treatment, the DLM is a numerically identical reparametrization of the canonical binned-endpoint event study.</p>
 <h2 id="step-5-plot-the-results">Step 5: Plot the Results<a class="headerlink" href="#step-5-plot-the-results" title="Permanent link">&para;</a></h2>
-<p>Both approaches produce the same event-study plot — coefficients by event time, with the reference period normalized to zero.</p>
+<p>Both approaches produce the same event-study plot — coefficients by event time, with the reference period normalized to zero. Here are the results from our example:</p>
+<figure>
+<p><img alt="Canonical Event Study" src="../../assets/plot_event_study.png" width="600" />
+  </p>
+<figcaption>Canonical event study: binned-endpoint event-time dummies with unit and time FE.</figcaption>
+</figure>
+<figure>
+<p><img alt="Distributed Lag Model" src="../../assets/plot_dlm.png" width="600" />
+  </p>
+<figcaption>DLM: leads and lags of the treatment variable, transformed to event-study betas.</figcaption>
+</figure>
+<p>The two plots are identical — flat pre-trends near zero, then a sharp drop to around −3 at treatment onset. We can overlay them to confirm:</p>
+<figure>
+<p><img alt="DLM vs Event Study" src="../../assets/plot_combined.png" width="600" />
+  </p>
+<figcaption>Overlaid estimates. The DLM (red) and event study (blue) are numerically identical.</figcaption>
+</figure>
+<h3 id="plotting-code">Plotting code<a class="headerlink" href="#plotting-code" title="Permanent link">&para;</a></h3>
 <div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">R</label><label for="__tabbed_5_2">Stata</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -1195,19 +1246,8 @@
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Or customize it</span>
 <a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">mod</span><span class="o">$</span><span class="n">plot</span><span class="w"> </span><span class="o">+</span>
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">  </span><span class="nf">labs</span><span class="p">(</span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Event-Study Plot (from DLM)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Periods to Treatment&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">+</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">  </span><span class="nf">labs</span><span class="p">(</span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Event-Study Plot&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Periods to Treatment&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">+</span>
 <a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">  </span><span class="nf">theme_minimal</span><span class="p">()</span>
-<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>
-<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="c1"># You can also build the plot manually from the event-study results</span>
-<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="nf">ggplot</span><span class="p">(</span><span class="n">es</span><span class="o">$</span><span class="n">betas</span><span class="p">,</span><span class="w"> </span><span class="nf">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">time_to_event</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coef</span><span class="p">))</span><span class="w"> </span><span class="o">+</span>
-<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">  </span><span class="nf">geom_hline</span><span class="p">(</span><span class="n">yintercept</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">linetype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;dashed&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;gray50&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">+</span>
-<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="w">  </span><span class="nf">geom_vline</span><span class="p">(</span><span class="n">xintercept</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">-0.5</span><span class="p">,</span><span class="w"> </span><span class="n">linetype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;dashed&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">color</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;gray50&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">+</span>
-<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="w">  </span><span class="nf">geom_pointrange</span><span class="p">(</span><span class="nf">aes</span><span class="p">(</span><span class="n">ymin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coef</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="m">1.96</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se</span><span class="p">,</span><span class="w"> </span><span class="n">ymax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coef</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="m">1.96</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se</span><span class="p">))</span><span class="w"> </span><span class="o">+</span>
-<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="w">  </span><span class="nf">labs</span><span class="p">(</span>
-<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="w">    </span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Event-Study Plot (from canonical ES)&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Periods to Treatment&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Coefficient&quot;</span>
-<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="o">+</span>
-<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a><span class="w">  </span><span class="nf">theme_minimal</span><span class="p">()</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -1242,7 +1282,6 @@
 </div>
 </div>
 </div>
-<p>The plot shows the classic event-study shape: flat pre-trends (coefficients near zero before treatment) and a sharp drop to around −3 at treatment onset, consistent with the true effect of −3.</p>
 <h2 id="why-this-matters">Why This Matters<a class="headerlink" href="#why-this-matters" title="Permanent link">&para;</a></h2>
 <p>This example uses a binary absorbing treatment — the special case where the canonical event study works. Both approaches give the same answer, so why bother with DLMs?</p>
 <p>The DLM's advantage appears when the treatment is <strong>continuous</strong> — e.g., a tax rate that changes from 0% to 5% to 8.5%, a minimum wage that increases in steps, or a policy dosage that varies across units and over time. In those settings, you can't create event-time dummies (there is no single "event"), but the DLM's lead/lag framework handles it naturally. See the <a href="../../theory/background/">Theory</a> page for a concrete illustration with continuous treatment data.</p>

@@ -719,6 +719,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1151,6 +1162,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1370,9 +1392,9 @@
 </code></pre></div>
 <hr />
 <h2 id="aggr_es"><code>aggr_es()</code><a class="headerlink" href="#aggr_es" title="Permanent link">&para;</a></h2>
-<p>Aggregate event-study treatment effects.</p>
+<p>Aggregate event-study treatment effects. Works with <strong>fixest models estimated via <code>i()</code></strong> (standard event studies), not DLM models.</p>
 <h3 id="usage_4">Usage<a class="headerlink" href="#usage_4" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nf">aggr_es</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">period</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;post&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">agg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;mean&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nf">aggr_es</span><span class="p">(</span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">period</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;post&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">aggregation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;mean&quot;</span><span class="p">)</span>
 </code></pre></div>
 <table>
 <thead>
@@ -1383,19 +1405,28 @@
 </thead>
 <tbody>
 <tr>
-<td><code>mod</code></td>
-<td>A DLM model object</td>
+<td><code>object</code></td>
+<td>A <code>fixest</code> model estimated with <code>i()</code></td>
+</tr>
+<tr>
+<td><code>rhs</code></td>
+<td>Null hypothesis value (default <code>0</code>)</td>
 </tr>
 <tr>
 <td><code>period</code></td>
-<td><code>"pre"</code> or <code>"post"</code></td>
+<td><code>"post"</code> (default), <code>"pre"</code>, or <code>"both"</code></td>
 </tr>
 <tr>
-<td><code>agg</code></td>
-<td><code>"mean"</code> or <code>"cumulative"</code></td>
+<td><code>aggregation</code></td>
+<td><code>"mean"</code> (default) or <code>"cumulative"</code></td>
 </tr>
 </tbody>
 </table>
+<h3 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nf">library</span><span class="p">(</span><span class="n">fixest</span><span class="p">)</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">est</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">feols</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="nf">i</span><span class="p">(</span><span class="n">event_time</span><span class="p">,</span><span class="w"> </span><span class="n">treat</span><span class="p">,</span><span class="w"> </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">-1</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">unit</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">time</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">df</span><span class="p">)</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="nf">aggr_es</span><span class="p">(</span><span class="n">est</span><span class="p">,</span><span class="w"> </span><span class="n">period</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;post&quot;</span><span class="p">)</span>
+</code></pre></div>
 <hr />
 <h2 id="helper-functions">Helper Functions<a class="headerlink" href="#helper-functions" title="Permanent link">&para;</a></h2>
 <table>

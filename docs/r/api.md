@@ -116,19 +116,28 @@ standard_twfe_for_comparison(
 
 ## `aggr_es()`
 
-Aggregate event-study treatment effects.
+Aggregate event-study treatment effects. Works with **fixest models estimated via `i()`** (standard event studies), not DLM models.
 
 ### Usage
 
 ```r
-aggr_es(mod, period = "post", agg = "mean")
+aggr_es(object, period = "post", aggregation = "mean")
 ```
 
 | Argument | Description |
 |---|---|
-| `mod` | A DLM model object |
-| `period` | `"pre"` or `"post"` |
-| `agg` | `"mean"` or `"cumulative"` |
+| `object` | A `fixest` model estimated with `i()` |
+| `rhs` | Null hypothesis value (default `0`) |
+| `period` | `"post"` (default), `"pre"`, or `"both"` |
+| `aggregation` | `"mean"` (default) or `"cumulative"` |
+
+### Example
+
+```r
+library(fixest)
+est <- feols(y ~ i(event_time, treat, ref = -1) | unit + time, data = df)
+aggr_es(est, period = "post")
+```
 
 ---
 
