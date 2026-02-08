@@ -1,0 +1,62 @@
+url: https://tlcaputi.github.io/dlm
+template:
+  bootstrap: 5
+  bootswatch: cosmo
+
+navbar:
+  structure:
+    left:  [intro, reference, articles]
+    right: [github]
+  components:
+    intro:
+      text: Get Started
+      href: articles/dlm-event-study-equivalence.html
+    reference:
+      text: Reference
+      href: reference/index.html
+    articles:
+      text: Articles
+      menu:
+      - text: Distributed Lag Models and Event Study Equivalence
+        href: articles/dlm-event-study-equivalence.html
+    github:
+      icon: fab fa-github fa-lg
+      href: https://github.com/tlcaputi/dlm
+      aria-label: GitHub
+
+reference:
+- title: Core Functions
+  desc: Main distributed lag model estimation functions
+  contents:
+  - distributed_lags_model
+  - distributed_lags_models
+  - distributed_lags_models2
+
+- title: Utilities
+  desc: Helper functions for cumulative summation and data generation
+  contents:
+  - generate_data
+  - revcumsum
+  - secumsum
+  - serevcumsum
+
+- title: Visualization
+  desc: Functions for creating and customizing event study plots
+  contents:
+  - ggiplot
+  - iplot_data
+  - aggr_es
+  - add_caption_to_plot
+  - get_caption_from_plot
+
+- title: Comparison
+  desc: Standard TWFE models for comparison with DLM
+  contents:
+  - standard_twfe_for_comparison
+  - twfe_companion
+
+- title: Other
+  desc: Additional utility functions
+  contents:
+  - inflation_adjust
+  - cpi

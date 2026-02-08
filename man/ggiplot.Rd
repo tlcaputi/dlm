@@ -69,6 +69,8 @@ channel. For example, we can make the CI band lighter with
 A ggplot2 object.
 }
 \description{
+Adapted from Grant McDermott's ggiplot package.
+
 Plots the \code{ggplot2} equivalent of \code{fixest::iplot()}. Many of the
 arguments are the same. As per the latter's description:
 This function plots the results of estimations (coefficients and confidence

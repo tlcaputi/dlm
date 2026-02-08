@@ -31,6 +31,7 @@ Imports:
     utils
 Suggests:
     knitr,
+    pkgdown,
     rmarkdown,
     testthat (>= 3.0.0),
     withr

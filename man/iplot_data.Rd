@@ -45,6 +45,8 @@ relative x-axis positions, and other aesthetic information needed to draw
 a ggplot2 object.
 }
 \description{
+Adapted from Grant McDermott's ggiplot package.
+
 Grabs the underlying data used to construct `fixest::iplot`,
 with some added functionality and tweaks for the `ggiplot` equivalents.
 }

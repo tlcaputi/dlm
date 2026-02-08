@@ -40,6 +40,8 @@ intervals, etc. Potentially useful information about the underlying
 hypothesis test is also provided as an attribute. See Examples.
 }
 \description{
+Adapted from Grant McDermott's ggiplot package.
+
 Aggregates post- (and/or pre-) treatment effects of an
 "event-study" estimation, also known as a dynamic difference-in-differences
 (DDiD) model. The event-study should have been estimated using the `fixest`

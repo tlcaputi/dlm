@@ -22,7 +22,8 @@ distributed_lags_models(
   dict = NULL,
   remove_unit_FE = FALSE,
   addl_arguments = c(),
-  model_type = "feols"
+  model_type = "feols",
+  plot_type = "ribbon"
 )
 }
 \arguments{
@@ -57,6 +58,10 @@ distributed_lags_models(
 \item{remove_unit_FE}{Whether to remove the unit fixed effects}
 
 \item{addl_arguments}{Additional arguments to be included in the model, as strings}
+
+\item{model_type}{The type of model to be used (default is "feols")}
+
+\item{plot_type}{The type of plot to be used (default is "ribbon")}
 
 \item{outcome}{The outcome variable.}
 }

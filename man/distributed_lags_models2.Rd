@@ -22,7 +22,8 @@ distributed_lags_models2(
   dict = NULL,
   remove_unit_FE = FALSE,
   addl_arguments = c(),
-  model_type = "feols"
+  model_type = "feols",
+  plot_type = "ribbon"
 )
 }
 \arguments{
