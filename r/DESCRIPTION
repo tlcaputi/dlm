@@ -1,0 +1,28 @@
+Package: dlm
+Type: Package
+Title: Distributed Lags Models
+Version: 0.0.1
+Author: Theo Caputi <tcaputi@gmail.com>
+Description: This package provides tools for working with distributed lags models.
+RoxygenNote: 7.2.3
+Encoding: UTF-8
+Depends:
+    logger (>= 0.2.2),
+    tidyverse (>= 1.3.0),
+    dplyr (>= 1.0.0),
+    lubridate (>= 1.7.9),
+    glue (>= 1.4.2),
+    ggplot2 (>= 3.3.0),
+    fixest (>= 0.11.1),
+    scales (>= 1.2.1),
+    R (>= 2.10)
+Imports:
+    logger (>= 0.2.2),
+    tidyverse (>= 1.3.0),
+    dplyr (>= 1.0.0),
+    lubridate (>= 1.7.9),
+    glue (>= 1.4.2),
+    ggplot2 (>= 3.3.0),
+    fixest (>= 0.11.1),
+    scales (>= 1.2.1)
+LazyData: true
