@@ -1,6 +1,6 @@
 site_name: dlm — Distributed Lag Models
-site_description: R and Stata packages for distributed lag models (Schmidheiny & Siegloch 2023)
-site_url: https://tlcaputi.github.io/dlm-stata/
+site_description: R and Stata implementations of distributed lag models (Schmidheiny & Siegloch 2023)
+site_url: https://tlcaputi.github.io/dlm/
 
 theme:
   name: material
@@ -54,11 +54,11 @@ nav:
   - Getting Started:
     - Installation: getting-started/installation.md
     - Quick Start: getting-started/quickstart.md
-  - Stata:
-    - Stata Guide: stata/guide.md
-    - Stata API Reference: stata/api.md
   - R:
     - R Guide: r/guide.md
     - R API Reference: r/api.md
+  - Stata:
+    - Stata Guide: stata/guide.md
+    - Stata API Reference: stata/api.md
   - Theory:
     - Mathematical Background: theory/background.md

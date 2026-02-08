@@ -1,6 +1,6 @@
 # Quick Start
 
-This page walks through a complete example in both Stata and R using generated test data.
+This page walks through a complete example in both R and Stata using generated test data. Both packages include a built-in test dataset generator so you can try the package immediately and verify that the DLM produces estimates identical to a canonical event study with binned endpoints.
 
 ## Generate Test Data
 
@@ -11,6 +11,14 @@ Both packages include a data generator that creates a balanced panel with stagge
 - Treatment onset at time 7, 8, or 9 (uniform)
 - A treatment effect of −3 on the outcome (post-treatment)
 - Gaussian noise (σ = 5)
+
+=== "R"
+
+    ```r
+    library(dlm)
+    df <- generate_data(seed = 42, n_groups = 500, n_times = 20, treat_prob = 0.4)
+    str(df)
+    ```
 
 === "Stata"
 
@@ -43,15 +51,29 @@ Both packages include a data generator that creates a balanced panel with stagge
     | `post` | 1 if post-treatment, 0 otherwise |
     | `outcome` | Simulated outcome |
 
+## Estimate the DLM
+
 === "R"
 
     ```r
     library(dlm)
-    df <- generate_data(seed = 42, n_groups = 500, n_times = 20, treat_prob = 0.4)
-    str(df)
-    ```
+    library(dplyr)
 
-## Estimate the DLM
+    df <- generate_data(seed = 42, n_groups = 500, n_times = 20, treat_prob = 0.4)
+
+    outcome_data <- df %>% select(group, time, outcome)
+    exposure_data <- df %>% select(group, time, post) %>% distinct()
+
+    mod <- distributed_lags_model(
+      data = outcome_data,
+      exposure_data = exposure_data,
+      from_rt = -3, to_rt = 3,
+      outcome = "outcome", exposure = "post",
+      unit = "group", time = "time"
+    )
+
+    mod$betas
+    ```
 
 === "Stata"
 
@@ -84,28 +106,6 @@ Both packages include a data generator that creates a balanced panel with stagge
     ------------------------------------------------------------------------
     ```
 
-=== "R"
-
-    ```r
-    library(dlm)
-    library(dplyr)
-
-    df <- generate_data(seed = 42, n_groups = 500, n_times = 20, treat_prob = 0.4)
-
-    outcome_data <- df %>% select(group, time, outcome)
-    exposure_data <- df %>% select(group, time, post) %>% distinct()
-
-    mod <- distributed_lags_model(
-      data = outcome_data,
-      exposure_data = exposure_data,
-      from_rt = -3, to_rt = 3,
-      outcome = "outcome", exposure = "post",
-      unit = "group", time = "time"
-    )
-
-    mod$betas
-    ```
-
 ## Interpret Results
 
 The output table shows **beta coefficients** — cumulative treatment effects at each event time relative to the reference period (default: −1).
@@ -116,7 +116,28 @@ The output table shows **beta coefficients** — cumulative treatment effects at
 
 In the example above, the true treatment effect is −3. The estimated post-treatment betas (−2.76, −3.09, −2.71, −3.26) cluster around −3, while pre-treatment betas (−0.06, 0.09) are close to zero — exactly as expected.
 
+Because the test data uses a binary absorbing treatment, these betas are numerically identical to what a canonical binned-endpoint event study would produce on the same data. Both the R and Stata packages include equivalence tests that verify this match to machine precision (~10⁻¹³).
+
 ## Access Results Programmatically
+
+=== "R"
+
+    ```r
+    # Beta coefficients (data.frame: time_to_event, coef, se)
+    mod$betas
+
+    # Event-study plot (ggplot2 object)
+    mod$plot
+
+    # Underlying fixest model object
+    summary(mod$model)
+
+    # Gamma variance-covariance matrix
+    mod$vcov
+
+    # Number of observations
+    nobs(mod$model)
+    ```
 
 === "Stata"
 
@@ -136,23 +157,4 @@ In the example above, the true treatment effect is −3. The estimated post-trea
     display e(from)       // from period
     display e(to)         // to period
     display e(ref_period) // reference period
-    ```
-
-=== "R"
-
-    ```r
-    # Beta coefficients (data.frame: time_to_event, coef, se)
-    mod$betas
-
-    # Event-study plot (ggplot2 object)
-    mod$plot
-
-    # Underlying fixest model object
-    summary(mod$model)
-
-    # Gamma variance-covariance matrix
-    mod$vcov
-
-    # Number of observations
-    nobs(mod$model)
     ```

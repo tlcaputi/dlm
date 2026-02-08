@@ -22,7 +22,7 @@ The DLM regresses the outcome on leads and lags of the treatment indicator:
 
 $$y_{it} = \alpha_i + \lambda_t + \sum_{j=0}^{|\underline{k}|-1} \gamma_j^{\text{lead}} \cdot x_{i,t+j} + \sum_{j=0}^{\bar{k}} \gamma_j^{\text{lag}} \cdot x_{i,t-j} + \varepsilon_{it}$$
 
-where $x_{it}$ is the binary treatment variable (typically: 1 if post-treatment, 0 otherwise).
+where $x_{it}$ is the treatment variable. In the binary case, $x_{it}$ is an indicator (1 if post-treatment, 0 otherwise). In the generalized case, $x_{it}$ can be a continuous measure of treatment intensity (e.g., a tax rate).
 
 This produces **gamma** ($\gamma$) coefficients on the individual leads and lags.
 
@@ -59,15 +59,27 @@ where $V$ is the variance-covariance matrix of the gammas and $\mathbf{1}$ is a 
 
 ## Why Use the DLM?
 
-The DLM and event-study regressions produce **identical point estimates and standard errors** — they are algebraically equivalent. So why use the DLM formulation?
+### Generalization to continuous treatments
 
-1. **Fewer indicator variables.** The DLM uses $|\underline{k}| + \bar{k}$ continuous leads/lags instead of $|\underline{k}| + \bar{k}$ indicator variables. With large event windows, this can be faster.
+The canonical event study relies on event-time indicator variables — dummies for "3 periods before treatment," "2 periods before," etc. These indicators only make sense when treatment is a one-time binary switch (e.g., a policy turns on and stays on). But many empirical settings involve treatments that are continuous, vary in intensity, change sign, or occur multiple times per unit. For instance:
 
-2. **No multicollinearity from binning.** The event-study approach requires careful construction of binned endpoints; errors in binning cause subtle bugs. The DLM avoids this entirely.
+- **Multiple tax reforms** of different magnitudes hitting different states at different times (Fuest et al., 2018; Suárez Serrato & Zidar, 2016)
+- **Minimum wage changes** that increase by different amounts across jurisdictions (Cengiz et al., 2019)
+- **Policy shocks** where the treatment variable is inherently continuous (e.g., benefit duration in weeks, tax rates in percentage points)
 
-3. **Natural time-window restriction.** Missing leads/lags at panel edges automatically restrict the sample to the correct time window — no manual `if` conditions needed.
+In these settings, event-time dummies do not apply. Researchers who want to use a canonical event study must typically dichotomize the continuous treatment into "big changes" vs. no change — discarding treatment variation, potentially biasing estimates, and fundamentally changing the analysis (Schmidheiny & Siegloch 2023, Section 4.3).
 
-4. **Cleaner extension to continuous treatments.** The DLM generalizes naturally to continuous (non-binary) exposure variables, where event-time dummies don't apply.
+The DLM avoids this problem entirely. Because it regresses on leads and lags of the treatment variable directly, the treatment variable $T_{i,t}$ can be continuous. Treatment effects are interpreted as the effect of a one-unit increase, just as in a generalized difference-in-differences model. This allows researchers to produce event-study-style dynamic treatment effect plots for treatments that increase and decrease at different magnitudes over many time periods.
+
+### Equivalence to binned event studies
+
+When applied to the special case of a one-time binary absorbing treatment, the DLM produces point estimates and standard errors that are **numerically identical** to a properly specified event study with binned endpoints. The DLM is a reparametrization of the event study: the gamma coefficients measure *incremental* changes in treatment effects, while the beta coefficients (recovered by cumulative summation) measure *cumulative* treatment effects (Schmidheiny & Siegloch 2023, Remark 6). The DLM is therefore a strict generalization of the canonical event study.
+
+### Data requirements (trade-off)
+
+The DLM is more data hungry than a canonical event study. Because the model includes leads and lags of the treatment variable, researchers must observe the treatment variable over a **wider time window** than the outcome variable. Specifically, for a balanced panel observed from period $t$ to $\bar{t}$ with an event window $[\underline{k}, \bar{k}]$, the treatment variable must be observed from $t - \bar{k}$ to $\bar{t} + |\underline{k}| - 1$ (Schmidheiny & Siegloch 2023, Remark 4). Observations at the edges of the panel where leads or lags cannot be constructed are automatically dropped from the estimation sample.
+
+This means that wider event windows require substantially more data. At some point, the estimation sample becomes too small for precise estimation. Researchers should experiment with different event window lengths and verify that estimates leading up to the endpoints converge, as recommended by Schmidheiny & Siegloch (2023, Remark 3).
 
 ## Verification
 
