@@ -88,22 +88,26 @@ The endpoints are "binned" — the $D_{-3}$ dummy equals 1 for all units at even
     reghdfe outcome es_m3 es_m2 es_0 es_1 es_2 es_3 ///
         if (time >= `tlo') & (time <= `thi'), ///
         absorb(unit time) vce(cluster unit)
+
+    * Save ES coefficients (dlm will overwrite e(b) in Step 3)
+    matrix es_b = e(b)
     ```
 
     Output (abridged):
 
     ```
-    HDFE Linear regression
-    Absorbing 2 HDFE groups
+    HDFE Linear regression                            Number of obs   =      7,500
+    Absorbing 2 HDFE groups                           F(   6,    499) =      25.67
 
-          outcome |      Coef.   Std. Err.      t    P>|t|
-    --------------+--------------------------------------------
-            es_m3 |  -0.063959    0.483545    -0.13   0.895
-            es_m2 |   0.094669    0.480424     0.20   0.844
-             es_0 |  -2.763973    0.461907    -5.98   0.000
-             es_1 |  -3.094282    0.520414    -5.95   0.000
-             es_2 |  -2.707691    0.554940    -4.88   0.000
-             es_3 |  -3.256921    0.426200    -7.64   0.000
+                 |               Robust
+         outcome | Coefficient  std. err.      t    P>|t|
+    -------------+------------------------------------------------
+           es_m3 |  -.0639588   .4835455    -0.13   0.895
+           es_m2 |   .0946687   .4804238     0.20   0.844
+            es_0 |  -2.763973   .4619066    -5.98   0.000
+            es_1 |  -3.094282   .5204141    -5.95   0.000
+            es_2 |  -2.707691   .5549396    -4.88   0.000
+            es_3 |  -3.256921   .4261997    -7.64   0.000
     ```
 
     !!! note
@@ -205,22 +209,22 @@ Let's confirm the equivalence numerically.
     * Save DLM results
     matrix dlm_b = e(betas)
 
-    * Compare
+    * Compare (es_b was saved in Step 2 before dlm overwrote e(b))
     display ""
     display "DLM vs Event Study Comparison:"
     display "  Period  DLM beta     ES beta      Difference"
     display "  ------  ----------   ----------   ----------"
 
     local periods  "-3 -2 0 1 2 3"
-    local es_vars  "es_m3 es_m2 es_0 es_1 es_2 es_3"
+    local es_cols  "1 2 3 4 5 6"
     local dlm_rows "1 2 4 5 6 7"
 
     forvalues j = 1/6 {
         local p : word `j' of `periods'
-        local v : word `j' of `es_vars'
+        local c : word `j' of `es_cols'
         local r : word `j' of `dlm_rows'
         local dlm_coef = dlm_b[`r', 2]
-        local es_coef = _b[`v']
+        local es_coef = es_b[1, `c']
         local diff = abs(`dlm_coef' - `es_coef')
         display "  " %5.0f `p' "  " %10.6f `dlm_coef' "   " %10.6f `es_coef' "   " %10.2e `diff'
     }
@@ -232,12 +236,12 @@ Let's confirm the equivalence numerically.
     DLM vs Event Study Comparison:
       Period  DLM beta     ES beta      Difference
       ------  ----------   ----------   ----------
-         -3   -0.063959    -0.063959     0.00e+00
-         -2    0.094669     0.094669     0.00e+00
-          0   -2.763973    -2.763973     0.00e+00
-          1   -3.094282    -3.094282     0.00e+00
-          2   -2.707691    -2.707691     0.00e+00
-          3   -3.256921    -3.256921     0.00e+00
+         -3   -0.063959    -0.063959     1.24e-13
+         -2    0.094669     0.094669     2.06e-13
+          0   -2.763973    -2.763973     3.40e-13
+          1   -3.094282    -3.094282     2.23e-13
+          2   -2.707691    -2.707691     1.82e-13
+          3   -3.256921    -3.256921     1.24e-13
     ```
 
 **The estimates match to machine precision** (~$10^{-13}$). This confirms the theoretical result from Schmidheiny & Siegloch (2023): for a binary absorbing treatment, the DLM is a numerically identical reparametrization of the canonical binned-endpoint event study.
