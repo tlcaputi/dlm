@@ -73,13 +73,22 @@ The resulting betas have the same interpretation as event-study coefficients: dy
 | Multiple outcomes per call | ✓ | Loop externally |
 | Weighted regression | ✓ | — |
 
-## GitHub
+## Links
 
 | | |
 |---|---|
 | **R package** | [github.com/tlcaputi/dlm](https://github.com/tlcaputi/dlm) |
 | **Stata package** | [github.com/tlcaputi/dlm-stata](https://github.com/tlcaputi/dlm-stata) |
-| **Developer** | [Theodore Caputi](https://www.theodorecaputi.com) |
+
+## Developer
+
+<div style="display: flex; align-items: center; gap: 1.2rem;">
+  <img src="assets/headshot.jpg" alt="Theodore Caputi" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+  <div>
+    <strong><a href="https://www.theodorecaputi.com">Theodore Caputi</a></strong><br>
+    MIT Department of Economics
+  </div>
+</div>
 
 ## Citation
 
