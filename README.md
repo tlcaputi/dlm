@@ -1,8 +1,24 @@
-# dlm
+<p align="center">
+  <img src="docs/assets/logo.svg" alt="dlm logo" width="120">
+</p>
 
-Distributed lag models (DLMs) equivalent to event studies with binned endpoints, following [Schmidheiny and Siegloch (2023, *Journal of Applied Econometrics*)](https://doi.org/10.1002/jae.2971).
+<h1 align="center">dlm</h1>
 
-A DLM estimates the same parameters as a standard event-study regression with binned leads/lags but uses a different parameterization that can be more convenient for continuous or multi-valued treatments. This package implements the method of Schmidheiny and Siegloch and is based in part on their replication code.
+<p align="center">
+  <strong>Distributed Lag Models for R</strong><br>
+  Generalize event studies to continuous treatments
+</p>
+
+<p align="center">
+  <a href="https://tlcaputi.github.io/dlm/">Documentation</a> &middot;
+  <a href="https://github.com/tlcaputi/dlm-stata">Stata version</a>
+</p>
+
+---
+
+R implementation of the distributed lag model (DLM) framework from [Schmidheiny and Siegloch (2023, *Journal of Applied Econometrics*)](https://doi.org/10.1002/jae.2971).
+
+DLMs generalize the canonical event study to settings with **continuous treatments** that can change in magnitude, sign, and timing throughout the study period. When applied to a binary absorbing treatment, the DLM produces estimates that are numerically identical to a binned-endpoint event study.
 
 ## Installation
 
@@ -11,38 +27,38 @@ A DLM estimates the same parameters as a standard event-study regression with bi
 devtools::install_github("tlcaputi/dlm")
 ```
 
-## Quick start
+## Quick Start
 
 ```r
 library(dlm)
+library(dplyr)
 
-# Generate example panel data (true effect = -3)
-df <- generate_data(seed = 1234)
+# Generate test data (true treatment effect = -3)
+df <- generate_data(seed = 42, n_groups = 500, n_times = 20, treat_prob = 0.4)
 
-# Run distributed lag model
-results <- distributed_lags_models(
-  data          = df,
-  exposure_data = df,
-  from_rt       = -5,
-  to_rt         = 5,
-  outcomes      = "outcome",
-  exposure      = "post",
-  unit          = "group",
-  time          = "time",
-  ref_period    = -1
+outcome_data <- df %>% select(group, time, outcome)
+exposure_data <- df %>% select(group, time, post) %>% distinct()
+
+# Estimate DLM
+mod <- distributed_lags_model(
+  data = outcome_data,
+  exposure_data = exposure_data,
+  from_rt = -3, to_rt = 3,
+  outcome = "outcome", exposure = "post",
+  unit = "group", time = "time"
 )
 
-# View coefficients
-results[[1]]$betas
-
-# Plot
-results[[1]]$plot
+# View results
+mod$betas
+mod$plot
 ```
 
-## Equivalence to event studies
+## Why DLMs?
 
-The key result from Schmidheiny and Siegloch (2023) is that DLM coefficients, obtained by cumulatively summing the distributed lag parameters, are numerically identical to event-study coefficients estimated with `fixest::i(..., bin = .)`. This package implements the cumulative summation and corresponding standard error calculations using the full variance-covariance matrix.
+The canonical event study uses event-time dummies, which only work for binary treatments that turn on once and stay on. Many empirical settings involve **continuous treatments** — tax rates, minimum wages, policy dosages — where event-time dummies don't apply. The DLM replaces these dummies with leads and lags of the treatment variable itself, naturally handling treatments that are continuous, change sign, vary in magnitude, and occur multiple times per unit.
 
-## References
+See the [documentation](https://tlcaputi.github.io/dlm/) for a full explanation with concrete examples.
 
-Schmidheiny, K., and S. Siegloch. 2023. "On Event Studies and Distributed-Lags in Two-Way Fixed Effects Models: Identification, Equivalence, and Generalization." *Journal of Applied Econometrics* 38(5): 695-713.
+## Citation
+
+> Schmidheiny, K. and S. Siegloch (2023). "On event studies and distributed-lag models: Equivalence, generalization and practical implications." *Journal of Applied Econometrics*, 38(5): 695-713.

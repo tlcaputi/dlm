@@ -4,6 +4,8 @@ site_url: https://tlcaputi.github.io/dlm/
 
 theme:
   name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
   palette:
     - scheme: default
       primary: indigo
