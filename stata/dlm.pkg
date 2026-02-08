@@ -1,0 +1,14 @@
+v 3
+d dlm - Distributed Lag Models (Schmidheiny & Siegloch 2023)
+d
+d Estimates distributed lag models and transforms gamma coefficients
+d into cumulative beta coefficients. Mathematically equivalent to
+d binned-endpoint event-study (TWFE) regressions.
+d
+d Requires: Stata 15+, reghdfe
+d
+d Distribution-Date: 20260207
+d
+F dlm.ado
+F dlm.sthlp
+F dlm_gen_data.ado

@@ -1,0 +1,8 @@
+v 3
+d dlm - Distributed Lag Models (Schmidheiny & Siegloch 2023)
+d Estimates distributed lag models and transforms gamma coefficients
+d into cumulative beta coefficients equivalent to binned event studies.
+d
+d Requires: reghdfe
+d
+p dlm
