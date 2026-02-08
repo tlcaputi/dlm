@@ -5,8 +5,9 @@ Version: 0.1.0
 Authors@R: person("Theodore", "Caputi", email = "tcaputi@gmail.com", role = c("aut", "cre"))
 Description: Implements distributed lag models equivalent to event studies with
     binned endpoints, following Schmidheiny and Siegloch (2023, Journal of Applied
-    Econometrics). Provides tools for estimation, visualization, and comparison
-    with standard two-way fixed effects specifications.
+    Econometrics). Based in part on the replication code of Schmidheiny and Siegloch.
+    Provides tools for estimation, visualization, and comparison with standard
+    two-way fixed effects specifications.
 License: MIT + file LICENSE
 URL: https://github.com/tlcaputi/dlm
 BugReports: https://github.com/tlcaputi/dlm/issues

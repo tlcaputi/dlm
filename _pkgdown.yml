@@ -1,7 +1,18 @@
 url: https://tlcaputi.github.io/dlm
+
 template:
   bootstrap: 5
-  bootswatch: cosmo
+  bootswatch: flatly
+  bslib:
+    pkgdown-nav-height: 80px
+
+home:
+  title: "dlm: Distributed Lag Models for Event Studies"
+  description: >
+    R package implementing distributed lag models equivalent to event studies
+    with binned endpoints, following Schmidheiny and Siegloch (2023, Journal
+    of Applied Econometrics). Based in part on the replication code of
+    Schmidheiny and Siegloch.
 
 navbar:
   structure:
@@ -17,7 +28,7 @@ navbar:
     articles:
       text: Articles
       menu:
-      - text: Distributed Lag Models and Event Study Equivalence
+      - text: "DLM-Event Study Equivalence"
         href: articles/dlm-event-study-equivalence.html
     github:
       icon: fab fa-github fa-lg

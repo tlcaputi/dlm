@@ -21,10 +21,11 @@ knitr::opts_chunk$set(
 The `dlm` package estimates distributed lag models (DLMs), which
 Schmidheiny and Siegloch (2023, *Journal of Applied Econometrics*)
 show are **mathematically equivalent** to event studies with binned
-endpoints. The key result is that event-study coefficients can be
-recovered from DLM coefficients via cumulative summation, and the
-two approaches yield identical estimates and standard errors when
-applied to the same sample.
+endpoints. This package implements their method and is based in part
+on their replication code. The key result is that event-study
+coefficients can be recovered from DLM coefficients via cumulative
+summation, and the two approaches yield identical estimates and
+standard errors when applied to the same sample.
 
 This vignette demonstrates the equivalence on simulated data and
 shows the basic workflow of the package.

@@ -2,7 +2,7 @@
 
 Distributed lag models (DLMs) equivalent to event studies with binned endpoints, following [Schmidheiny and Siegloch (2023, *Journal of Applied Econometrics*)](https://doi.org/10.1002/jae.2971).
 
-A DLM estimates the same parameters as a standard event-study regression with binned leads/lags but uses a different parameterization that can be more convenient for continuous or multi-valued treatments.
+A DLM estimates the same parameters as a standard event-study regression with binned leads/lags but uses a different parameterization that can be more convenient for continuous or multi-valued treatments. This package implements the method of Schmidheiny and Siegloch and is based in part on their replication code.
 
 ## Installation
 
