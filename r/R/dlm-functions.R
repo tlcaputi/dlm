@@ -336,16 +336,17 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     
 
     outcome_name = "Coefficient"
-    exposure_name = "Time to Treatment"
+    pretty_exposure = tools::toTitleCase(gsub("_", " ", exposure))
+    exposure_name = glue("Time to Unit Change in {pretty_exposure}")
     if(!is.null(dict)){
       if(outcome %in% names(dict)){
         outcome_name = dict[outcome]
-      } 
+      }
       if(exposure %in% names(dict)){
         exposure_name = dict[exposure]
-      } 
+      }
     }
-    
+
     # This just creates a plot (adding in reference period)
     # and is not really necessary for the results
     plotdf = rbind.data.frame(betas, data.frame(time_to_event = ref_period, coef = 0, se = 0))
@@ -911,16 +912,17 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   
 
   outcome_name = "Coefficient"
-  exposure_name = "Time to Treatment"
+  pretty_exposure = tools::toTitleCase(gsub("_", " ", exposure))
+  exposure_name = glue("Time to Unit Change in {pretty_exposure}")
   if(!is.null(dict)){
     if(outcome %in% names(dict)){
       outcome_name = dict[outcome]
-    } 
+    }
     if(exposure %in% names(dict)){
       exposure_name = dict[exposure]
-    } 
+    }
   }
-  
+
   # This just creates a plot (adding in reference period)
   # and is not really necessary for the results
   plotdf = rbind.data.frame(betas, data.frame(time_to_event = ref_period, coef = 0, se = 0))

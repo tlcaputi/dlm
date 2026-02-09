@@ -27,7 +27,11 @@ program define dlm_plot
     // Set defaults
     // =========================================================================
     if (`"`title'"' == "") local title "Event Study (DLM)"
-    if (`"`xtitle'"' == "") local xtitle "Time to Treatment"
+    if (`"`xtitle'"' == "") {
+        local expo_var "`e(exposure)'"
+        local pretty_expo = proper(subinstr("`expo_var'", "_", " ", .))
+        local xtitle "Time to Unit Change in `pretty_expo'"
+    }
     if (`"`ytitle'"' == "") local ytitle "Coefficient"
 
     // Build caption with N and optional from/to labels

@@ -160,7 +160,7 @@ Options for `dlm_plot`:
 | Option | Description |
 |---|---|
 | `title(string)` | Plot title (default: "Event Study (DLM)") |
-| `xtitle(string)` | X-axis title (default: "Time to Treatment") |
+| `xtitle(string)` | X-axis title (default: "Time to Unit Change in {Exposure}") |
 | `ytitle(string)` | Y-axis title (default: "Coefficient") |
 | `from_label(string)` | Label for "From" in caption (e.g., "Jan 2010") |
 | `to_label(string)` | Label for "To" in caption (e.g., "Dec 2016") |

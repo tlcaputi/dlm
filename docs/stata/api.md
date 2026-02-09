@@ -78,7 +78,7 @@ dlm_plot [, title(string) xtitle(string) ytitle(string)
 | Option | Default | Description |
 |---|---|---|
 | `title(string)` | "Event Study (DLM)" | Plot title |
-| `xtitle(string)` | "Time to Treatment" | X-axis label |
+| `xtitle(string)` | "Time to Unit Change in {Exposure}" | X-axis label |
 | `ytitle(string)` | "Coefficient" | Y-axis label |
 | `from_label(string)` | — | Label for "From" in caption (e.g., "Jan 2010"). If both `from_label` and `to_label` are specified, caption shows "From ... To ...". |
 | `to_label(string)` | — | Label for "To" in caption (e.g., "Dec 2016") |
