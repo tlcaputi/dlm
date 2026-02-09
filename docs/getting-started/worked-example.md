@@ -318,7 +318,7 @@ Now plot the canonical event-study estimates:
     * Plot follows the same pattern as the DLM plot below
     ```
 
-![Canonical Event Study](../assets/plot_event_study.png){ width="600" }
+![Canonical Event Study](../assets/plot_event_study_v2.png){ width="600" }
 
 And the DLM estimates:
 
@@ -348,7 +348,7 @@ And the DLM estimates:
     drop es_*
     ```
 
-![Distributed Lag Model](../assets/plot_dlm.png){ width="600" }
+![Distributed Lag Model](../assets/plot_dlm_v2.png){ width="600" }
 
 The two plots are identical. We can overlay them to confirm:
 
@@ -375,7 +375,7 @@ The two plots are identical. We can overlay them to confirm:
       theme(legend.position = "bottom")
     ```
 
-![DLM vs Event Study](../assets/plot_combined.png){ width="600" }
+![DLM vs Event Study](../assets/plot_combined_v2.png){ width="600" }
 
 Flat pre-trends near zero, then a sharp drop to around −2.6 at treatment onset — consistent with the true effect of −3. The DLM (red) and event study (blue) estimates are numerically identical.
 

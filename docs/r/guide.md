@@ -179,7 +179,7 @@ mod$betas
 mod$plot
 ```
 
-![Default event-study plot](../assets/plot_r_guide_default.png){ width="600" }
+![Default event-study plot](../assets/plot_r_guide_default_v2.png){ width="600" }
 
 The plot is a `ggplot2` object. Customize it further:
 
@@ -197,7 +197,7 @@ mod <- distributed_lags_model(
 # Caption will show "From Jan 2010 To Dec 2016" instead of "From 4 To 18"
 ```
 
-![Customized event-study plot](../assets/plot_r_guide_custom.png){ width="600" }
+![Customized event-study plot](../assets/plot_r_guide_custom_v2.png){ width="600" }
 
 ### Access the underlying fixest model
 

@@ -166,7 +166,7 @@ Options for `dlm_plot`:
 | `to_label(string)` | Label for "To" in caption (e.g., "Dec 2016") |
 | `saving(string)` | Export plot to file (e.g., "plot.png") |
 
-![Stata event-study plot](../assets/plot_stata_guide.png){ width="600" }
+![Stata event-study plot](../assets/plot_stata_guide_v2.png){ width="600" }
 
 ## Data Preservation
 
