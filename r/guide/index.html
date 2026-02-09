@@ -1312,7 +1312,7 @@
 <h3 id="built-in-event-study-plot">Built-in event-study plot<a class="headerlink" href="#built-in-event-study-plot" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">mod</span><span class="o">$</span><span class="n">plot</span>
 </code></pre></div>
-<p><img alt="Default event-study plot" src="../../assets/plot_r_guide_default_v2.png" width="600" /></p>
+<p><img alt="Default event-study plot" src="../../assets/plot_r_guide_default_v3.png" width="600" /></p>
 <p>The plot is a <code>ggplot2</code> object. Customize it further:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">mod</span><span class="o">$</span><span class="n">plot</span><span class="w"> </span><span class="o">+</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="n">ggplot2</span><span class="o">::</span><span class="nf">labs</span><span class="p">(</span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;My Event Study&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Years to Treatment&quot;</span><span class="p">)</span>
@@ -1323,7 +1323,7 @@
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="p">)</span>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="c1"># Caption will show &quot;From Jan 2010 To Dec 2016&quot; instead of &quot;From 4 To 18&quot;</span>
 </code></pre></div>
-<p><img alt="Customized event-study plot" src="../../assets/plot_r_guide_custom_v2.png" width="600" /></p>
+<p><img alt="Customized event-study plot" src="../../assets/plot_r_guide_custom_v3.png" width="600" /></p>
 <h3 id="access-the-underlying-fixest-model">Access the underlying fixest model<a class="headerlink" href="#access-the-underlying-fixest-model" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nf">summary</span><span class="p">(</span><span class="n">mod</span><span class="o">$</span><span class="n">model</span><span class="p">)</span>
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="n">fixest</span><span class="o">::</span><span class="nf">coeftable</span><span class="p">(</span><span class="n">mod</span><span class="o">$</span><span class="n">model</span><span class="p">)</span>
