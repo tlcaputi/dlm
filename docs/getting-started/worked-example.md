@@ -296,7 +296,7 @@ Now plot the canonical event-study estimates:
 === "R"
 
     ```r
-    ggplot(es_df, aes(x = time_to_event, y = coef)) +
+    p <- ggplot(es_df, aes(x = time_to_event, y = coef)) +
       geom_hline(yintercept = 0, lty = 2, color = "red") +
       geom_vline(xintercept = -0.5, lty = 2, color = "gray50") +
       geom_ribbon(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se),
@@ -310,6 +310,7 @@ Now plot the canonical event-study estimates:
       theme(aspect.ratio = 0.6,
             plot.title = element_text(size = 11, face = "bold", hjust = 0),
             panel.grid.minor = element_blank())
+    ggsave("event_study.png", p, width = 7, height = 5)
     ```
 
 === "Stata"
@@ -326,7 +327,7 @@ And the DLM estimates:
 === "R"
 
     ```r
-    ggplot(dlm_df, aes(x = time_to_event, y = coef)) +
+    p <- ggplot(dlm_df, aes(x = time_to_event, y = coef)) +
       geom_hline(yintercept = 0, lty = 2, color = "red") +
       geom_vline(xintercept = -0.5, lty = 2, color = "gray50") +
       geom_ribbon(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se),
@@ -340,6 +341,7 @@ And the DLM estimates:
       theme(aspect.ratio = 0.6,
             plot.title = element_text(size = 11, face = "bold", hjust = 0),
             panel.grid.minor = element_blank())
+    ggsave("dlm.png", p, width = 7, height = 5)
     ```
 
 === "Stata"
@@ -362,7 +364,7 @@ The two plots are identical. We can overlay them to confirm:
       es_df %>% mutate(method = "Event Study")
     )
 
-    ggplot(combined_df, aes(x = time_to_event, y = coef, color = method)) +
+    p <- ggplot(combined_df, aes(x = time_to_event, y = coef, color = method)) +
       geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
       geom_vline(xintercept = -0.5, linetype = "dashed", color = "gray80") +
       geom_pointrange(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se),
@@ -375,6 +377,7 @@ The two plots are identical. We can overlay them to confirm:
            x = "Periods to Treatment", y = "Coefficient", color = "") +
       theme_minimal(base_size = 14) +
       theme(legend.position = "bottom")
+    ggsave("combined.png", p, width = 10, height = 6)
     ```
 
 ![DLM vs Event Study](../assets/plot_combined_v3.png){ width="600" }

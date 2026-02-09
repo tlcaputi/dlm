@@ -184,8 +184,9 @@ mod$plot
 The plot is a `ggplot2` object. Customize it further:
 
 ```r
-mod$plot +
+p <- mod$plot +
   ggplot2::labs(title = "My Event Study", x = "Years to Treatment")
+ggsave("my_event_study.png", p, width = 7, height = 5)
 ```
 
 ![Customized event-study plot](../assets/plot_r_guide_custom_v3.png){ width="600" }
