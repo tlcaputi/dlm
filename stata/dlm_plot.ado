@@ -62,22 +62,21 @@ program define dlm_plot
     // =========================================================================
     // Create plot with nc700-style formatting
     // =========================================================================
-    // Colors: gs3 ~ gray20, gs5 ~ gray30, gs8 ~ gray50
-    // Ribbon via rarea, line + scatter for coefficients
-    // Red dashed vertical line at ref_period + 0.5
+    // Colors: black line/points, grey20 ribbon at 20% opacity
+    // Red dashed zero line, gray dashed reference line
     local vline_x = `ref_period' + 0.5
 
     twoway (rarea ci_lo ci_hi time_to_event, ///
-                fcolor(gs5%30) lcolor(none) sort) ///
+                fcolor(gs3%20) lcolor(none) sort) ///
            (line coef time_to_event, ///
-                lcolor(gs3) lwidth(medthick) sort) ///
+                lcolor(black) lwidth(medthick) sort) ///
            (scatter coef time_to_event, ///
-                mcolor(gs3) msymbol(circle) msize(small)), ///
-           yline(0, lpattern(dash) lcolor(gs8)) ///
-           xline(`vline_x', lpattern(dash) lcolor(red)) ///
+                mcolor(black) msymbol(circle) msize(medsmall)), ///
+           yline(0, lpattern(dash) lcolor(red)) ///
+           xline(`vline_x', lpattern(dash) lcolor(gs8)) ///
            xtitle(`"`xtitle'"') ytitle(`"`ytitle'"') ///
-           title(`"`title'"', size(medium)) ///
-           note(`"`caption'"', size(vsmall)) ///
+           title(`"`title'"', size(medium) position(11)) ///
+           note(`"`caption'"', size(vsmall) position(5)) ///
            legend(off) ///
            graphregion(color(white)) plotregion(color(white)) ///
            scheme(s2color)

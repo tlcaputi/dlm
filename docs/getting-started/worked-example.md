@@ -297,18 +297,19 @@ Now plot the canonical event-study estimates:
 
     ```r
     ggplot(es_df, aes(x = time_to_event, y = coef)) +
-      geom_hline(yintercept = 0, lty = 2, color = "gray50") +
-      geom_vline(xintercept = -0.5, lty = 2, color = "red") +
+      geom_hline(yintercept = 0, lty = 2, color = "red") +
+      geom_vline(xintercept = -0.5, lty = 2, color = "gray50") +
       geom_ribbon(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se),
-                  alpha = 0.3, fill = "gray30") +
-      geom_line(color = "gray20", linewidth = 0.8) +
-      geom_point(color = "gray20", size = 1.5) +
+                  alpha = 0.2, fill = "grey20") +
+      geom_line(color = "black", linewidth = 0.8) +
+      geom_point(color = "black", size = 2.5) +
       scale_x_continuous(breaks = -3:3) +
       labs(title = "Canonical Event Study",
            x = "Periods to Treatment", y = "Coefficient") +
       theme_minimal(base_size = 10) +
       theme(aspect.ratio = 0.6,
-            plot.title = element_text(size = 11, face = "bold", hjust = 0.5))
+            plot.title = element_text(size = 11, face = "bold", hjust = 0),
+            panel.grid.minor = element_blank())
     ```
 
 === "Stata"
@@ -326,18 +327,19 @@ And the DLM estimates:
 
     ```r
     ggplot(dlm_df, aes(x = time_to_event, y = coef)) +
-      geom_hline(yintercept = 0, lty = 2, color = "gray50") +
-      geom_vline(xintercept = -0.5, lty = 2, color = "red") +
+      geom_hline(yintercept = 0, lty = 2, color = "red") +
+      geom_vline(xintercept = -0.5, lty = 2, color = "gray50") +
       geom_ribbon(aes(ymin = coef - 1.96 * se, ymax = coef + 1.96 * se),
-                  alpha = 0.3, fill = "gray30") +
-      geom_line(color = "gray20", linewidth = 0.8) +
-      geom_point(color = "gray20", size = 1.5) +
+                  alpha = 0.2, fill = "grey20") +
+      geom_line(color = "black", linewidth = 0.8) +
+      geom_point(color = "black", size = 2.5) +
       scale_x_continuous(breaks = -3:3) +
       labs(title = "Distributed Lag Model",
            x = "Periods to Treatment", y = "Coefficient") +
       theme_minimal(base_size = 10) +
       theme(aspect.ratio = 0.6,
-            plot.title = element_text(size = 11, face = "bold", hjust = 0.5))
+            plot.title = element_text(size = 11, face = "bold", hjust = 0),
+            panel.grid.minor = element_blank())
     ```
 
 === "Stata"
