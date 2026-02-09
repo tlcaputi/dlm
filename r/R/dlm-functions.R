@@ -471,7 +471,7 @@ generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 
     times = 1:n_times
     groups = glue("group{1:n_groups}")
     panel = expand.grid(group = groups, time = times)
-    indvl_panel = rbind.data.frame(panel, panel)
+    indvl_panel = panel
 
     # Give treat_prob of units a random treatment time between 7:9
     treatments = data.frame(group = groups) %>% 
@@ -499,7 +499,7 @@ generate_data = function(seed=1234, n_groups = 26^2, n_times = 20, treat_prob = 
             treat == 1 ~ as.numeric(time >= treatment_time)
         ),
         # random outcome with effect size of 4 after treatment
-        outcome = rnorm(n(), sd = 5) + (I(years_to_treatment >= 0) * -3)
+        outcome = rnorm(n(), sd = 5) + (as.numeric(years_to_treatment >= 0) * -3)
     )
 
     # Make it pretty

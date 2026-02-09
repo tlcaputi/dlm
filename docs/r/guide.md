@@ -188,6 +188,8 @@ mod$plot +
   ggplot2::labs(title = "My Event Study", x = "Years to Treatment")
 ```
 
+![Customized event-study plot](../assets/plot_r_guide_custom_v3.png){ width="600" }
+
 You can also use `time_labels` to map time period values to readable labels in the caption:
 
 ```r
@@ -196,8 +198,6 @@ mod <- distributed_lags_model(
 )
 # Caption will show "From Jan 2010 To Dec 2016" instead of "From 4 To 18"
 ```
-
-![Customized event-study plot](../assets/plot_r_guide_custom_v3.png){ width="600" }
 
 ### Access the underlying fixest model
 
