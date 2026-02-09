@@ -122,10 +122,12 @@ add_caption_to_plot = function(p, caption_addition, sep="\n"){
 #' @param dict A dictionary of variable names
 #' @param remove_unit_FE Whether to remove the unit fixed effects
 #' @param addl_arguments Additional arguments to be included in the model, as strings
+#' @param from_label Optional label for the "From" period in the plot caption (e.g., "Jan 2010")
+#' @param to_label Optional label for the "To" period in the plot caption (e.g., "Dec 2016")
 #' @return A list containing model results, coefficients, and plots.
 #' @export
-#' 
-distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols"){
+#'
+distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols", from_label = NULL, to_label = NULL){
   
   # if outcomes is a string, make it a vector of that string
   outcomes = c(outcomes)
@@ -356,32 +358,40 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
       )
     )
     plotdf = plotdf %>% arrange(time_to_event)
-    p = ggplot(plotdf, aes(x = time_to_event, y = coef))
-    p = p + geom_line(color = "darkblue")
-    p = p + geom_point(color = "darkblue")
-    p = p + geom_errorbar(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), width = 0.2, color = "darkblue")
-    p = p + geom_hline(yintercept = 0, linetype = "dashed")
-    p = p + geom_vline(xintercept = ref_period+0.5, linetype = "dashed")
     min_included_year = min(data_years_included, na.rm = T)
     max_included_year = max(data_years_included, na.rm = T)
-    p = p + labs(x = exposure_name, y = outcome_name, caption = glue("N={comma(nobs(model))} | From {min_included_year} To {max_included_year} | {Sys.time()}"))
-    p = p + theme_bw()
+    from_lbl = if(!is.null(from_label)) from_label else min_included_year
+    to_lbl = if(!is.null(to_label)) to_label else max_included_year
+    p = ggplot(plotdf, aes(x = time_to_event, y = coef))
+    p = p + geom_hline(yintercept = 0, lty = 2, color = "gray50")
+    p = p + geom_vline(xintercept = ref_period+0.5, lty = 2, color = "red")
+    p = p + geom_ribbon(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), alpha = 0.3, fill = "gray30")
+    p = p + geom_line(color = "gray20", linewidth = 0.8)
+    p = p + geom_point(color = "gray20", size = 1.5)
+    p = p + labs(x = exposure_name, y = outcome_name, caption = glue("N={comma(nobs(model))} | From {from_lbl} To {to_lbl} | {Sys.time()}"))
+    p = p + theme_minimal(base_size = 10)
+    p = p + theme(
+      aspect.ratio = 0.6,
+      plot.title = element_text(size = 11, face = "bold", hjust = 0.5),
+      plot.caption = element_text(size = 8, hjust = 0, lineheight = 1.1),
+      plot.margin = margin(t = 10, r = 5, b = 10, l = 5, unit = "pt")
+    )
 
     if(dd){
       out = twfe_companion(
-        data = data, 
-        exposure_data = exposure_data, 
-        from_rt = from_rt, 
-        to_rt = to_rt, 
-        outcome = outcome, 
-        exposure = exposure, 
-        unit = unit, 
-        time = time, 
-        covariates = covariates, 
-        addl_fes = addl_fes, 
-        ref_period = ref_period, 
-        weights = weights, 
-        dd = dd, 
+        data = data,
+        exposure_data = exposure_data,
+        from_rt = from_rt,
+        to_rt = to_rt,
+        outcome = outcome,
+        exposure = exposure,
+        unit = unit,
+        time = time,
+        covariates = covariates,
+        addl_fes = addl_fes,
+        ref_period = ref_period,
+        weights = weights,
+        dd = dd,
         n = n
       )
       # out = do.call(twfe_companion, list(...))
@@ -688,10 +698,12 @@ twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure
 #' @param addl_fes Vector of additional fixed effects for the model.
 #' @param ref_period Reference period (default -1)
 #' @param weights Weights to be included in the regression
+#' @param from_label Optional label for the "From" period in the plot caption (e.g., "Jan 2010")
+#' @param to_label Optional label for the "To" period in the plot caption (e.g., "Dec 2016")
 #' @return A list containing model results, coefficients, and plots.
 #' @export
-#' 
-distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL){
+#'
+distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, from_label = NULL, to_label = NULL){
   
 
   for(v in c(unit, time, outcome, covariates, addl_fes)){
@@ -917,32 +929,40 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
     )
   )
   plotdf = plotdf %>% arrange(time_to_event)
-  p = ggplot(plotdf, aes(x = time_to_event, y = coef))
-  p = p + geom_line(color = "darkblue")
-  p = p + geom_point(color = "darkblue")
-  p = p + geom_errorbar(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), width = 0.2, color = "darkblue")
-  p = p + geom_hline(yintercept = 0, linetype = "dashed")
-  p = p + geom_vline(xintercept = ref_period+0.5, linetype = "dashed")
   min_included_year = min(data_years_included, na.rm = T)
   max_included_year = max(data_years_included, na.rm = T)
-  p = p + labs(x = exposure_name, y = outcome_name, caption = glue("N={comma(nobs(model))} | From {min_included_year} To {max_included_year} | {Sys.time()}"))
-  p = p + theme_bw()
+  from_lbl = if(!is.null(from_label)) from_label else min_included_year
+  to_lbl = if(!is.null(to_label)) to_label else max_included_year
+  p = ggplot(plotdf, aes(x = time_to_event, y = coef))
+  p = p + geom_hline(yintercept = 0, lty = 2, color = "gray50")
+  p = p + geom_vline(xintercept = ref_period+0.5, lty = 2, color = "red")
+  p = p + geom_ribbon(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), alpha = 0.3, fill = "gray30")
+  p = p + geom_line(color = "gray20", linewidth = 0.8)
+  p = p + geom_point(color = "gray20", size = 1.5)
+  p = p + labs(x = exposure_name, y = outcome_name, caption = glue("N={comma(nobs(model))} | From {from_lbl} To {to_lbl} | {Sys.time()}"))
+  p = p + theme_minimal(base_size = 10)
+  p = p + theme(
+    aspect.ratio = 0.6,
+    plot.title = element_text(size = 11, face = "bold", hjust = 0.5),
+    plot.caption = element_text(size = 8, hjust = 0, lineheight = 1.1),
+    plot.margin = margin(t = 10, r = 5, b = 10, l = 5, unit = "pt")
+  )
 
   if(dd){
     out = twfe_companion(
-      data = data, 
-      exposure_data = exposure_data, 
-      from_rt = from_rt, 
-      to_rt = to_rt, 
-      outcome = outcome, 
-      exposure = exposure, 
-      unit = unit, 
-      time = time, 
-      covariates = covariates, 
-      addl_fes = addl_fes, 
-      ref_period = ref_period, 
-      weights = weights, 
-      dd = dd, 
+      data = data,
+      exposure_data = exposure_data,
+      from_rt = from_rt,
+      to_rt = to_rt,
+      outcome = outcome,
+      exposure = exposure,
+      unit = unit,
+      time = time,
+      covariates = covariates,
+      addl_fes = addl_fes,
+      ref_period = ref_period,
+      weights = weights,
+      dd = dd,
       n = n,
       remove_unit_FE = remove_unit_FE
     )
