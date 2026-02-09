@@ -188,13 +188,13 @@ mod$plot +
   ggplot2::labs(title = "My Event Study", x = "Years to Treatment")
 ```
 
-You can also use `from_label` and `to_label` to customize the caption's date range:
+You can also use `time_labels` to map time period values to readable labels in the caption:
 
 ```r
 mod <- distributed_lags_model(
-  ..., from_label = "Jan 2010", to_label = "Dec 2016"
+  ..., time_labels = c("4" = "Jan 2010", "18" = "Dec 2016")
 )
-# Caption will show "From Jan 2010 To Dec 2016" instead of raw time values
+# Caption will show "From Jan 2010 To Dec 2016" instead of "From 4 To 18"
 ```
 
 ![Customized event-study plot](../assets/plot_r_guide_custom.png){ width="600" }

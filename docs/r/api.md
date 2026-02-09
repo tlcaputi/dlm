@@ -23,8 +23,7 @@ distributed_lags_model(
   dd = FALSE,
   n = 2,
   dict = NULL,
-  from_label = NULL,
-  to_label = NULL
+  time_labels = NULL
 )
 ```
 
@@ -47,8 +46,7 @@ distributed_lags_model(
 | `dd` | Logical: include DD companion estimate in plot (default: `FALSE`) |
 | `n` | Integer: number of digits for DD companion (default: 2) |
 | `dict` | Named vector for renaming axes in the plot (default: `NULL`) |
-| `from_label` | String: label for "From" in plot caption, e.g. `"Jan 2010"` (default: `NULL`, uses raw time value) |
-| `to_label` | String: label for "To" in plot caption, e.g. `"Dec 2016"` (default: `NULL`, uses raw time value) |
+| `time_labels` | Named vector mapping time period values to display labels for the plot caption (default: `NULL`). E.g., `c("4" = "Jan 2010", "18" = "Dec 2016")`. The earliest and latest included periods are looked up in this mapping; unmatched values fall back to raw numbers. |
 
 ### Return Value
 

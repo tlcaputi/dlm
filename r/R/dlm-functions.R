@@ -122,12 +122,11 @@ add_caption_to_plot = function(p, caption_addition, sep="\n"){
 #' @param dict A dictionary of variable names
 #' @param remove_unit_FE Whether to remove the unit fixed effects
 #' @param addl_arguments Additional arguments to be included in the model, as strings
-#' @param from_label Optional label for the "From" period in the plot caption (e.g., "Jan 2010")
-#' @param to_label Optional label for the "To" period in the plot caption (e.g., "Dec 2016")
+#' @param time_labels Named vector mapping time period values to display labels for the plot caption (e.g., c("4" = "Jan 2010", "18" = "Dec 2016")). The earliest and latest included periods are looked up in this mapping.
 #' @return A list containing model results, coefficients, and plots.
 #' @export
 #'
-distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols", from_label = NULL, to_label = NULL){
+distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, remove_unit_FE = FALSE, addl_arguments = c(), model_type = "feols", time_labels = NULL){
   
   # if outcomes is a string, make it a vector of that string
   outcomes = c(outcomes)
@@ -360,8 +359,12 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
     plotdf = plotdf %>% arrange(time_to_event)
     min_included_year = min(data_years_included, na.rm = T)
     max_included_year = max(data_years_included, na.rm = T)
-    from_lbl = if(!is.null(from_label)) from_label else min_included_year
-    to_lbl = if(!is.null(to_label)) to_label else max_included_year
+    from_lbl = min_included_year
+    to_lbl = max_included_year
+    if (!is.null(time_labels)) {
+      if (as.character(min_included_year) %in% names(time_labels)) from_lbl = time_labels[as.character(min_included_year)]
+      if (as.character(max_included_year) %in% names(time_labels)) to_lbl = time_labels[as.character(max_included_year)]
+    }
     p = ggplot(plotdf, aes(x = time_to_event, y = coef))
     p = p + geom_hline(yintercept = 0, lty = 2, color = "gray50")
     p = p + geom_vline(xintercept = ref_period+0.5, lty = 2, color = "red")
@@ -698,12 +701,11 @@ twfe_companion = function(data, exposure_data, from_rt, to_rt, outcome, exposure
 #' @param addl_fes Vector of additional fixed effects for the model.
 #' @param ref_period Reference period (default -1)
 #' @param weights Weights to be included in the regression
-#' @param from_label Optional label for the "From" period in the plot caption (e.g., "Jan 2010")
-#' @param to_label Optional label for the "To" period in the plot caption (e.g., "Dec 2016")
+#' @param time_labels Named vector mapping time period values to display labels for the plot caption (e.g., c("4" = "Jan 2010", "18" = "Dec 2016")). The earliest and latest included periods are looked up in this mapping.
 #' @return A list containing model results, coefficients, and plots.
 #' @export
 #'
-distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, from_label = NULL, to_label = NULL){
+distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, exposure, unit, time, covariates = NULL, addl_fes = NULL, ref_period = -1, weights = NULL, dd=F, n=2, dict = NULL, time_labels = NULL){
   
 
   for(v in c(unit, time, outcome, covariates, addl_fes)){
@@ -931,8 +933,12 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
   plotdf = plotdf %>% arrange(time_to_event)
   min_included_year = min(data_years_included, na.rm = T)
   max_included_year = max(data_years_included, na.rm = T)
-  from_lbl = if(!is.null(from_label)) from_label else min_included_year
-  to_lbl = if(!is.null(to_label)) to_label else max_included_year
+  from_lbl = min_included_year
+  to_lbl = max_included_year
+  if (!is.null(time_labels)) {
+    if (as.character(min_included_year) %in% names(time_labels)) from_lbl = time_labels[as.character(min_included_year)]
+    if (as.character(max_included_year) %in% names(time_labels)) to_lbl = time_labels[as.character(max_included_year)]
+  }
   p = ggplot(plotdf, aes(x = time_to_event, y = coef))
   p = p + geom_hline(yintercept = 0, lty = 2, color = "gray50")
   p = p + geom_vline(xintercept = ref_period+0.5, lty = 2, color = "red")
