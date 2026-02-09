@@ -194,7 +194,12 @@ You can also use `time_labels` to map time period values to readable labels in t
 
 ```r
 mod <- distributed_lags_model(
-  ..., time_labels = c("4" = "Jan 2010", "18" = "Dec 2016")
+  data = data,
+  exposure_data = exposure_data,
+  from_rt = -3, to_rt = 3,
+  outcome = "outcome", exposure = "post",
+  unit = "group", time = "time",
+  time_labels = c("4" = "Jan 2010", "18" = "Dec 2016")
 )
 # Caption will show "From Jan 2010 To Dec 2016" instead of "From 4 To 18"
 ```
