@@ -1,0 +1,1706 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="R and Stata implementations of distributed lag models (Schmidheiny & Siegloch 2023)">
+      
+      
+      
+        <link rel="canonical" href="https://tlcaputi.github.io/dlm/theory/background/">
+      
+      
+        <link rel="prev" href="../../stata/api/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Mathematical Background - dlm — Distributed Lag Models</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#mathematical-background" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="dlm — Distributed Lag Models" class="md-header__button md-logo" aria-label="dlm — Distributed Lag Models" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            dlm — Distributed Lag Models
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Mathematical Background
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tlcaputi/dlm" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tlcaputi/dlm
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="dlm — Distributed Lag Models" class="md-nav__button md-logo" aria-label="dlm — Distributed Lag Models" data-md-component="logo">
+      
+  <img src="../../assets/logo.svg" alt="logo">
+
+    </a>
+    dlm — Distributed Lag Models
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tlcaputi/dlm" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tlcaputi/dlm
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/worked-example/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worked Example
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    R
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    R
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../r/guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    R Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../r/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    R API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stata
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Stata
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../stata/guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stata Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../stata/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stata API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theory
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Theory
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mathematical Background
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mathematical Background
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#intuition-from-event-studies-to-dlms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intuition: From Event Studies to DLMs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Intuition: From Event Studies to DLMs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-the-canonical-event-study-what-you-already-know" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: The canonical event study (what you already know)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-the-dlm-same-data-different-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: The DLM (same data, different columns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-the-equivalence-betas-cumulative-sums-of-gammas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: The equivalence (betas = cumulative sums of gammas)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-why-this-matters-continuous-treatments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Why this matters — continuous treatments
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#formal-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Formal Specification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event-study-regression" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event-Study Regression
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#distributed-lag-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Distributed Lag Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-equivalence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Equivalence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Equivalence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#before-the-reference-period" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before the reference period
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#after-the-reference-period" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After the reference period
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#standard-error-propagation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standard Error Propagation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-use-the-dlm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why Use the DLM?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why Use the DLM?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generalization-to-continuous-treatments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generalization to continuous treatments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#equivalence-to-binned-event-studies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Equivalence to binned event studies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-requirements-trade-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data requirements (trade-off)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#intuition-from-event-studies-to-dlms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intuition: From Event Studies to DLMs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Intuition: From Event Studies to DLMs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-the-canonical-event-study-what-you-already-know" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: The canonical event study (what you already know)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-the-dlm-same-data-different-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: The DLM (same data, different columns)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-the-equivalence-betas-cumulative-sums-of-gammas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: The equivalence (betas = cumulative sums of gammas)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-why-this-matters-continuous-treatments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Why this matters — continuous treatments
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#formal-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Formal Specification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event-study-regression" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event-Study Regression
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#distributed-lag-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Distributed Lag Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-equivalence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Equivalence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Equivalence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#before-the-reference-period" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before the reference period
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#after-the-reference-period" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After the reference period
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#standard-error-propagation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standard Error Propagation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-use-the-dlm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why Use the DLM?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why Use the DLM?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generalization-to-continuous-treatments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generalization to continuous treatments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#equivalence-to-binned-event-studies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Equivalence to binned event studies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-requirements-trade-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data requirements (trade-off)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="mathematical-background">Mathematical Background<a class="headerlink" href="#mathematical-background" title="Permanent link">&para;</a></h1>
+<p>This page summarizes the key theoretical results from Schmidheiny and Siegloch (2023), "On event studies and distributed-lag models: Equivalence, generalization and practical implications," <em>Journal of Applied Econometrics</em>, 38(5): 695–713.</p>
+<h2 id="intuition-from-event-studies-to-dlms">Intuition: From Event Studies to DLMs<a class="headerlink" href="#intuition-from-event-studies-to-dlms" title="Permanent link">&para;</a></h2>
+<p>Most researchers are familiar with the canonical event study. This section uses that familiarity as a starting point and shows, step by step, how the distributed lag model is a reparametrization of the same idea — and why that reparametrization unlocks continuous treatments.</p>
+<h3 id="step-1-the-canonical-event-study-what-you-already-know">Step 1: The canonical event study (what you already know)<a class="headerlink" href="#step-1-the-canonical-event-study-what-you-already-know" title="Permanent link">&para;</a></h3>
+<p>In a canonical event study, you observe a panel of units over time. Some units receive a binary treatment that turns on at a known date and stays on. You want to trace out the treatment effect <em>dynamically</em> — how does the outcome change at 2 periods before treatment, 1 period before, the period of treatment, 1 period after, etc.?</p>
+<p>To do this, you create <strong>event-time dummy variables</strong>. Each dummy equals 1 if a unit is exactly <span class="arithmatex">\(k\)</span> periods away from its treatment onset, and 0 otherwise. You pick a reference period (typically <span class="arithmatex">\(k = -1\)</span>) and omit it. Then you regress the outcome on these dummies plus unit and time fixed effects.</p>
+<p><strong>Concrete example.</strong> Suppose Unit A is treated at time 5 and you want a window from <span class="arithmatex">\(-2\)</span> to <span class="arithmatex">\(+2\)</span> with reference period <span class="arithmatex">\(-1\)</span>. Your data looks like:</p>
+<table>
+<thead>
+<tr>
+<th>unit</th>
+<th>time</th>
+<th>outcome</th>
+<th>event_time</th>
+<th><span class="arithmatex">\(D_{-2}\)</span></th>
+<th><span class="arithmatex">\(D_{0}\)</span></th>
+<th><span class="arithmatex">\(D_{1}\)</span></th>
+<th><span class="arithmatex">\(D_{2}\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>3</td>
+<td>12.3</td>
+<td>−2</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>4</td>
+<td>11.9</td>
+<td>−1 (ref)</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>5</td>
+<td>8.7</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>6</td>
+<td>9.1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>7</td>
+<td>8.4</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>You then estimate:</p>
+<div class="arithmatex">\[y_{it} = \alpha_i + \lambda_t + \beta_{-2} D_{it}^{-2} + \beta_0 D_{it}^{0} + \beta_1 D_{it}^{1} + \beta_2 D_{it}^{2} + \varepsilon_{it}\]</div>
+<p>The <span class="arithmatex">\(\beta\)</span> coefficients are your event-study estimates — each one measures the treatment effect at a particular time horizon relative to the reference period.</p>
+<h3 id="step-2-the-dlm-same-data-different-columns">Step 2: The DLM (same data, different columns)<a class="headerlink" href="#step-2-the-dlm-same-data-different-columns" title="Permanent link">&para;</a></h3>
+<p>The DLM takes the <strong>same data</strong> but constructs different regressors. Instead of asking "what event-time period is this unit in?", it asks: "what is this unit's treatment status at various time offsets?"</p>
+<p>Specifically, it creates <strong>leads</strong> (future values) and <strong>lags</strong> (current and past values) of the treatment variable. For the same window (<span class="arithmatex">\(-2\)</span> to <span class="arithmatex">\(+2\)</span>), it creates:</p>
+<ul>
+<li><span class="arithmatex">\(x_{t+1}\)</span>: treatment value 1 period in the <strong>future</strong> (1 lead, because <span class="arithmatex">\(|-2| - 1 = 1\)</span>)</li>
+<li><span class="arithmatex">\(x_{t}\)</span>: treatment value <strong>now</strong> (lag 0)</li>
+<li><span class="arithmatex">\(x_{t-1}\)</span>: treatment value 1 period in the <strong>past</strong> (lag 1)</li>
+<li><span class="arithmatex">\(x_{t-2}\)</span>: treatment value 2 periods in the <strong>past</strong> (lag 2)</li>
+</ul>
+<p>Here is the same data for Unit A (treated at time 5, so <code>post</code> switches from 0 to 1 at time 5):</p>
+<table>
+<thead>
+<tr>
+<th>unit</th>
+<th>time</th>
+<th>outcome</th>
+<th>post</th>
+<th><span class="arithmatex">\(x_{t+1}\)</span></th>
+<th><span class="arithmatex">\(x_{t}\)</span></th>
+<th><span class="arithmatex">\(x_{t-1}\)</span></th>
+<th><span class="arithmatex">\(x_{t-2}\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>3</td>
+<td>12.3</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>4</td>
+<td>11.9</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>5</td>
+<td>8.7</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>6</td>
+<td>9.1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>7</td>
+<td>8.4</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>You then estimate:</p>
+<div class="arithmatex">\[y_{it} = \alpha_i + \lambda_t + \gamma_1^{\text{lead}} \cdot x_{i,t+1} + \gamma_0^{\text{lag}} \cdot x_{it} + \gamma_1^{\text{lag}} \cdot x_{i,t-1} + \gamma_2^{\text{lag}} \cdot x_{i,t-2} + \varepsilon_{it}\]</div>
+<p>The <span class="arithmatex">\(\gamma\)</span> coefficients measure <strong>incremental</strong> changes in the treatment effect at each time offset.</p>
+<h3 id="step-3-the-equivalence-betas-cumulative-sums-of-gammas">Step 3: The equivalence (betas = cumulative sums of gammas)<a class="headerlink" href="#step-3-the-equivalence-betas-cumulative-sums-of-gammas" title="Permanent link">&para;</a></h3>
+<p>The key result from Schmidheiny &amp; Siegloch (2023) is that the event-study <span class="arithmatex">\(\beta\)</span> coefficients are just <strong>cumulative sums</strong> of the DLM <span class="arithmatex">\(\gamma\)</span> coefficients:</p>
+<table>
+<thead>
+<tr>
+<th>Event-study <span class="arithmatex">\(\beta\)</span></th>
+<th>Equals</th>
+<th>Intuition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="arithmatex">\(\beta_{-2}\)</span></td>
+<td><span class="arithmatex">\(-\gamma_1^{\text{lead}}\)</span></td>
+<td>Negative of the single lead gamma</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\beta_{-1}\)</span></td>
+<td>0 (reference)</td>
+<td>Normalized to zero</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\beta_{0}\)</span></td>
+<td><span class="arithmatex">\(\gamma_0^{\text{lag}}\)</span></td>
+<td>Just the contemporaneous gamma</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\beta_{1}\)</span></td>
+<td><span class="arithmatex">\(\gamma_0^{\text{lag}} + \gamma_1^{\text{lag}}\)</span></td>
+<td>Cumulative sum of two gammas</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\beta_{2}\)</span></td>
+<td><span class="arithmatex">\(\gamma_0^{\text{lag}} + \gamma_1^{\text{lag}} + \gamma_2^{\text{lag}}\)</span></td>
+<td>Cumulative sum of three gammas</td>
+</tr>
+</tbody>
+</table>
+<p>In other words, <strong>gammas are incremental</strong> (the marginal change at each step) and <strong>betas are cumulative</strong> (the total effect up to that point). The two representations contain exactly the same information — you can always convert between them.</p>
+<p>When applied to binary treatment data, the DLM betas are numerically identical to the event-study betas. Both the R and Stata packages verify this to machine precision (~10⁻¹³).</p>
+<h3 id="step-4-why-this-matters-continuous-treatments">Step 4: Why this matters — continuous treatments<a class="headerlink" href="#step-4-why-this-matters-continuous-treatments" title="Permanent link">&para;</a></h3>
+<p>With a binary treatment, both approaches give identical answers, and event-time dummies are perfectly natural. But now consider a <strong>continuous treatment</strong> — say, a tax rate that changes by different amounts at different times:</p>
+<table>
+<thead>
+<tr>
+<th>unit</th>
+<th>time</th>
+<th>outcome</th>
+<th>tax_rate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>3</td>
+<td>12.3</td>
+<td>0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>4</td>
+<td>11.9</td>
+<td>0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>5</td>
+<td>8.7</td>
+<td>5.0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>6</td>
+<td>7.1</td>
+<td>8.5</td>
+</tr>
+<tr>
+<td>A</td>
+<td>7</td>
+<td>9.4</td>
+<td>3.0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The canonical event study breaks down.</strong> There is no single "treatment onset" to anchor event-time dummies. When did treatment start — when the rate went to 5? And what is "2 periods after treatment" when the rate keeps changing? Researchers who want to use event-time dummies here must typically dichotomize the treatment into "big changes" vs. no change, discarding variation and fundamentally altering the analysis (Schmidheiny &amp; Siegloch 2023, Section 4.3).</p>
+<p><strong>The DLM works perfectly.</strong> Just create leads and lags of <code>tax_rate</code>:</p>
+<table>
+<thead>
+<tr>
+<th>unit</th>
+<th>time</th>
+<th>outcome</th>
+<th>tax_rate</th>
+<th><span class="arithmatex">\(x_{t+1}\)</span></th>
+<th><span class="arithmatex">\(x_t\)</span></th>
+<th><span class="arithmatex">\(x_{t-1}\)</span></th>
+<th><span class="arithmatex">\(x_{t-2}\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>3</td>
+<td>12.3</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>4</td>
+<td>11.9</td>
+<td>0</td>
+<td>5.0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>5</td>
+<td>8.7</td>
+<td>5.0</td>
+<td>8.5</td>
+<td>5.0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>6</td>
+<td>7.1</td>
+<td>8.5</td>
+<td>3.0</td>
+<td>8.5</td>
+<td>5.0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>A</td>
+<td>7</td>
+<td>9.4</td>
+<td>3.0</td>
+<td>...</td>
+<td>3.0</td>
+<td>8.5</td>
+<td>5.0</td>
+</tr>
+</tbody>
+</table>
+<p>The same regression specification works. The gammas now measure the effect of a <strong>one-unit increase</strong> in the treatment variable at each time offset, and the betas (cumulative sums) trace out a dynamic treatment effect plot — exactly the kind of plot researchers are used to seeing from event studies, but now for a continuous treatment.</p>
+<p>This is the core contribution of the DLM framework: it <strong>generalizes the canonical event study to continuous treatments</strong> while being <strong>exactly equivalent</strong> in the binary case.</p>
+<hr />
+<h2 id="formal-specification">Formal Specification<a class="headerlink" href="#formal-specification" title="Permanent link">&para;</a></h2>
+<p>The sections below present the formal econometric specification from Schmidheiny &amp; Siegloch (2023).</p>
+<h2 id="event-study-regression">Event-Study Regression<a class="headerlink" href="#event-study-regression" title="Permanent link">&para;</a></h2>
+<p>The standard event-study specification is:</p>
+<div class="arithmatex">\[y_{it} = \alpha_i + \lambda_t + \sum_{\substack{k = \underline{k} \\ k \neq k^*}}^{\bar{k}} \beta_k \cdot D_{it}^k + \varepsilon_{it}\]</div>
+<p>where:</p>
+<ul>
+<li><span class="arithmatex">\(\alpha_i\)</span> and <span class="arithmatex">\(\lambda_t\)</span> are unit and time fixed effects</li>
+<li><span class="arithmatex">\(D_{it}^k\)</span> are event-time indicators (1 if unit <span class="arithmatex">\(i\)</span> is <span class="arithmatex">\(k\)</span> periods from treatment at time <span class="arithmatex">\(t\)</span>)</li>
+<li><span class="arithmatex">\(k^*\)</span> is the omitted reference period (typically −1)</li>
+<li><span class="arithmatex">\(\underline{k}\)</span> and <span class="arithmatex">\(\bar{k}\)</span> are the endpoints of the event window</li>
+<li>The endpoint dummies are <strong>binned</strong>: <span class="arithmatex">\(D_{it}^{\underline{k}} = \mathbf{1}[\text{event time} \leq \underline{k}]\)</span> and <span class="arithmatex">\(D_{it}^{\bar{k}} = \mathbf{1}[\text{event time} \geq \bar{k}]\)</span></li>
+</ul>
+<h2 id="distributed-lag-model">Distributed Lag Model<a class="headerlink" href="#distributed-lag-model" title="Permanent link">&para;</a></h2>
+<p>The DLM regresses the outcome on leads and lags of the treatment indicator:</p>
+<div class="arithmatex">\[y_{it} = \alpha_i + \lambda_t + \sum_{j=0}^{|\underline{k}|-1} \gamma_j^{\text{lead}} \cdot x_{i,t+j} + \sum_{j=0}^{\bar{k}} \gamma_j^{\text{lag}} \cdot x_{i,t-j} + \varepsilon_{it}\]</div>
+<p>where <span class="arithmatex">\(x_{it}\)</span> is the treatment variable. In the binary case, <span class="arithmatex">\(x_{it}\)</span> is an indicator (1 if post-treatment, 0 otherwise). In the generalized case, <span class="arithmatex">\(x_{it}\)</span> can be a continuous measure of treatment intensity (e.g., a tax rate).</p>
+<p>This produces <strong>gamma</strong> (<span class="arithmatex">\(\gamma\)</span>) coefficients on the individual leads and lags.</p>
+<h2 id="the-equivalence">The Equivalence<a class="headerlink" href="#the-equivalence" title="Permanent link">&para;</a></h2>
+<p><strong>Theorem (Schmidheiny &amp; Siegloch 2023):</strong> The gamma coefficients from the DLM and the beta coefficients from the binned event study are linked by cumulative summation:</p>
+<h3 id="before-the-reference-period">Before the reference period<a class="headerlink" href="#before-the-reference-period" title="Permanent link">&para;</a></h3>
+<p>For <span class="arithmatex">\(k &lt; k^*\)</span>:</p>
+<div class="arithmatex">\[\beta_k = -\sum_{j=k}^{k^*-1} \gamma_j\]</div>
+<p>(negative reverse cumulative sum of gammas from <span class="arithmatex">\(k\)</span> to the period just before the reference)</p>
+<h3 id="after-the-reference-period">After the reference period<a class="headerlink" href="#after-the-reference-period" title="Permanent link">&para;</a></h3>
+<p>For <span class="arithmatex">\(k &gt; k^*\)</span>:</p>
+<div class="arithmatex">\[\beta_k = \sum_{j=k^*+1}^{k} \gamma_j\]</div>
+<p>(forward cumulative sum of gammas from just after the reference to <span class="arithmatex">\(k\)</span>)</p>
+<h2 id="standard-error-propagation">Standard Error Propagation<a class="headerlink" href="#standard-error-propagation" title="Permanent link">&para;</a></h2>
+<p>Because betas are cumulative sums of gammas, the standard errors must account for covariances. For a cumulative sum <span class="arithmatex">\(\beta = \sum_{j=a}^{b} \gamma_j\)</span>:</p>
+<div class="arithmatex">\[\text{SE}(\beta) = \sqrt{\mathbf{1}' \cdot V_{a:b, a:b} \cdot \mathbf{1}}\]</div>
+<p>where <span class="arithmatex">\(V\)</span> is the variance-covariance matrix of the gammas and <span class="arithmatex">\(\mathbf{1}\)</span> is a conformable vector of ones. This correctly accounts for the correlation between adjacent gamma estimates.</p>
+<div class="admonition warning">
+<p class="admonition-title">Not just the sum of SEs</p>
+<p>A common mistake is computing <span class="arithmatex">\(\text{SE}(\beta) = \sqrt{\sum \text{SE}(\gamma_j)^2}\)</span>, which ignores off-diagonal covariances and produces incorrect confidence intervals.</p>
+</div>
+<h2 id="why-use-the-dlm">Why Use the DLM?<a class="headerlink" href="#why-use-the-dlm" title="Permanent link">&para;</a></h2>
+<h3 id="generalization-to-continuous-treatments">Generalization to continuous treatments<a class="headerlink" href="#generalization-to-continuous-treatments" title="Permanent link">&para;</a></h3>
+<p>The canonical event study relies on event-time indicator variables — dummies for "3 periods before treatment," "2 periods before," etc. These indicators only make sense when treatment is a one-time binary switch (e.g., a policy turns on and stays on). But many empirical settings involve treatments that are continuous, vary in intensity, change sign, or occur multiple times per unit. For instance:</p>
+<ul>
+<li><strong>Multiple tax reforms</strong> of different magnitudes hitting different states at different times (Fuest et al., 2018; Suárez Serrato &amp; Zidar, 2016)</li>
+<li><strong>Minimum wage changes</strong> that increase by different amounts across jurisdictions (Cengiz et al., 2019)</li>
+<li><strong>Policy shocks</strong> where the treatment variable is inherently continuous (e.g., benefit duration in weeks, tax rates in percentage points)</li>
+</ul>
+<p>In these settings, event-time dummies do not apply. Researchers who want to use a canonical event study must typically dichotomize the continuous treatment into "big changes" vs. no change — discarding treatment variation, potentially biasing estimates, and fundamentally changing the analysis (Schmidheiny &amp; Siegloch 2023, Section 4.3).</p>
+<p>The DLM avoids this problem entirely. Because it regresses on leads and lags of the treatment variable directly, the treatment variable <span class="arithmatex">\(T_{i,t}\)</span> can be continuous. Treatment effects are interpreted as the effect of a one-unit increase, just as in a generalized difference-in-differences model. This allows researchers to produce event-study-style dynamic treatment effect plots for treatments that increase and decrease at different magnitudes over many time periods.</p>
+<h3 id="equivalence-to-binned-event-studies">Equivalence to binned event studies<a class="headerlink" href="#equivalence-to-binned-event-studies" title="Permanent link">&para;</a></h3>
+<p>When applied to the special case of a one-time binary absorbing treatment, the DLM produces point estimates and standard errors that are <strong>numerically identical</strong> to a properly specified event study with binned endpoints. The DLM is a reparametrization of the event study: the gamma coefficients measure <em>incremental</em> changes in treatment effects, while the beta coefficients (recovered by cumulative summation) measure <em>cumulative</em> treatment effects (Schmidheiny &amp; Siegloch 2023, Remark 6). The DLM is therefore a strict generalization of the canonical event study.</p>
+<h3 id="data-requirements-trade-off">Data requirements (trade-off)<a class="headerlink" href="#data-requirements-trade-off" title="Permanent link">&para;</a></h3>
+<p>The DLM is more data hungry than a canonical event study. Because the model includes leads and lags of the treatment variable, researchers must observe the treatment variable over a <strong>wider time window</strong> than the outcome variable. Specifically, for a balanced panel observed from period <span class="arithmatex">\(t\)</span> to <span class="arithmatex">\(\bar{t}\)</span> with an event window <span class="arithmatex">\([\underline{k}, \bar{k}]\)</span>, the treatment variable must be observed from <span class="arithmatex">\(t - \bar{k}\)</span> to <span class="arithmatex">\(\bar{t} + |\underline{k}| - 1\)</span> (Schmidheiny &amp; Siegloch 2023, Remark 4). Observations at the edges of the panel where leads or lags cannot be constructed are automatically dropped from the estimation sample.</p>
+<p>This means that wider event windows require substantially more data. At some point, the estimation sample becomes too small for precise estimation. Researchers should experiment with different event window lengths and verify that estimates leading up to the endpoints converge, as recommended by Schmidheiny &amp; Siegloch (2023, Remark 3).</p>
+<h2 id="verification">Verification<a class="headerlink" href="#verification" title="Permanent link">&para;</a></h2>
+<p>Both the R and Stata implementations include equivalence tests that verify DLM betas match event-study betas to machine precision (~10⁻¹³). The cross-language test confirms the R and Stata implementations agree to ~10⁻⁸ (the small difference is due to different HDFE solvers: <code>fixest</code> in R vs. <code>reghdfe</code> in Stata).</p>
+<h2 id="reference">Reference<a class="headerlink" href="#reference" title="Permanent link">&para;</a></h2>
+<p>Schmidheiny, K. and S. Siegloch (2023). "On event studies and distributed-lag models: Equivalence, generalization and practical implications." <em>Journal of Applied Econometrics</em>, 38(5): 695–713. <a href="https://doi.org/10.1002/jae.2971">DOI: 10.1002/jae.2971</a></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "content.code.copy", "content.code.annotate", "toc.follow", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
