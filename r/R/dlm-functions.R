@@ -366,17 +366,17 @@ distributed_lags_models = function(data, exposure_data, from_rt, to_rt, outcomes
       if (as.character(max_included_year) %in% names(time_labels)) to_lbl = time_labels[as.character(max_included_year)]
     }
     p = ggplot(plotdf, aes(x = time_to_event, y = coef))
-    p = p + geom_hline(yintercept = 0, lty = 2, color = "red")
-    p = p + geom_vline(xintercept = ref_period+0.5, lty = 2, color = "gray50")
-    p = p + geom_ribbon(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), alpha = 0.2, fill = "grey20")
+    p = p + geom_hline(yintercept = 0, linetype = "dashed", color = "red", alpha = 0.7)
+    p = p + geom_vline(xintercept = ref_period+0.5, linetype = "solid", color = "gray50", alpha = 0.7)
+    p = p + geom_ribbon(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), alpha = 0.2, fill = "grey20", color = NA)
     p = p + geom_line(color = "black", linewidth = 0.8)
-    p = p + geom_point(color = "black", size = 2.5)
+    p = p + geom_point(color = "black", size = 2)
     p = p + labs(x = exposure_name, y = outcome_name, caption = glue("N={comma(nobs(model))} | From {from_lbl} To {to_lbl} | {Sys.time()}"))
     p = p + theme_minimal(base_size = 10)
     p = p + theme(
       aspect.ratio = 0.6,
       plot.title = element_text(size = 11, face = "bold", hjust = 0),
-      plot.caption = element_text(size = 8, hjust = 1, lineheight = 1.1),
+      plot.caption = element_text(size = 8, hjust = 0, lineheight = 1.1),
       plot.margin = margin(t = 10, r = 5, b = 10, l = 5, unit = "pt"),
       panel.grid.minor = element_blank()
     )
@@ -941,17 +941,17 @@ distributed_lags_model = function(data, exposure_data, from_rt, to_rt, outcome, 
     if (as.character(max_included_year) %in% names(time_labels)) to_lbl = time_labels[as.character(max_included_year)]
   }
   p = ggplot(plotdf, aes(x = time_to_event, y = coef))
-  p = p + geom_hline(yintercept = 0, lty = 2, color = "red")
-  p = p + geom_vline(xintercept = ref_period+0.5, lty = 2, color = "gray50")
-  p = p + geom_ribbon(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), alpha = 0.2, fill = "grey20")
+  p = p + geom_hline(yintercept = 0, linetype = "dashed", color = "red", alpha = 0.7)
+  p = p + geom_vline(xintercept = ref_period+0.5, linetype = "solid", color = "gray50", alpha = 0.7)
+  p = p + geom_ribbon(aes(ymin = coef - 1.96*se, ymax = coef + 1.96*se), alpha = 0.2, fill = "grey20", color = NA)
   p = p + geom_line(color = "black", linewidth = 0.8)
-  p = p + geom_point(color = "black", size = 2.5)
+  p = p + geom_point(color = "black", size = 2)
   p = p + labs(x = exposure_name, y = outcome_name, caption = glue("N={comma(nobs(model))} | From {from_lbl} To {to_lbl} | {Sys.time()}"))
   p = p + theme_minimal(base_size = 10)
   p = p + theme(
     aspect.ratio = 0.6,
     plot.title = element_text(size = 11, face = "bold", hjust = 0),
-    plot.caption = element_text(size = 8, hjust = 1, lineheight = 1.1),
+    plot.caption = element_text(size = 8, hjust = 0, lineheight = 1.1),
     plot.margin = margin(t = 10, r = 5, b = 10, l = 5, unit = "pt"),
     panel.grid.minor = element_blank()
   )
