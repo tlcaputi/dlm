@@ -163,7 +163,7 @@ Because the test data uses a binary absorbing treatment, these betas are numeric
     mod$plot
     ```
 
-    ![R Event-Study Plot](../assets/plot_quickstart_r_v2.png){ width="600" }
+    ![R Event-Study Plot](../assets/plot_quickstart_r_v3.png){ width="600" }
 
 === "Stata"
 
@@ -173,7 +173,7 @@ Because the test data uses a binary absorbing treatment, these betas are numeric
     dlm_plot, title("Event-Study Plot (DLM)") xtitle("Periods to Treatment") ytitle("Coefficient")
     ```
 
-    ![Stata Event-Study Plot](../assets/plot_quickstart_stata_v2.png){ width="600" }
+    ![Stata Event-Study Plot](../assets/plot_quickstart_stata_v3.png){ width="600" }
 
 ## Access Results Programmatically
 
